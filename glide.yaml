@@ -8,7 +8,7 @@ excludeDirs:
 - thrift/mocks
 import:
 - package: github.com/apache/thrift
-  version: ^0.14
+  version: ^0.13
   subpackages:
   - lib/go/thrift
 - package: github.com/cactus/go-statsd-client
