@@ -54,7 +54,11 @@ func TestInvalidThriftBytes(t *testing.T) {
 	defer sCh.Close()
 
 	svr := NewServer(sCh)
-	svr.Register(gen.NewTChanSecondServiceServer(new(mocks.TChanSecondService)))
+	mock := new(mocks.TChanSecondService)
+	svr.Register(gen.NewTChanSecondServiceServer(mock))
+
+	// TODO(tszucs): But why?!
+	mock.On("Echo", ctxArg(), "").Return("", tchannel.NewSystemError(tchannel.ErrCodeBadRequest, ""))
 
 	tests := []struct {
 		name string

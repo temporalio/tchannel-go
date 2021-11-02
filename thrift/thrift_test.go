@@ -21,13 +21,12 @@
 package thrift_test
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strings"
 	"testing"
 	"time"
-
-	"golang.org/x/net/context"
 
 	// Test is in a separate package to avoid circular dependencies.
 	. "github.com/uber/tchannel-go/thrift"
@@ -204,7 +203,7 @@ func TestThriftDecodeEmptyFrameServer(t *testing.T) {
 		})
 
 		withWriter(t, call.Arg3Writer, func(w tchannel.ArgWriter) error {
-			if err := WriteStruct(w, &gen.SimpleServiceSimpleArgs{}); err != nil {
+			if err := WriteStruct(context.Background(), w, &gen.SimpleServiceSimpleArgs{}); err != nil {
 				return err
 			}
 
@@ -219,7 +218,7 @@ func TestThriftDecodeEmptyFrameServer(t *testing.T) {
 
 		var res gen.SimpleServiceSimpleResult
 		withReader(t, response.Arg3Reader, func(r tchannel.ArgReader) error {
-			return ReadStruct(r, &res)
+			return ReadStruct(context.Background(), r, &res)
 		})
 
 		assert.False(t, res.IsSetSimpleErr(), "Expected no error")
@@ -236,7 +235,7 @@ func TestThriftDecodeEmptyFrameClient(t *testing.T) {
 
 			withReader(t, call.Arg3Reader, func(r tchannel.ArgReader) error {
 				req := &gen.SimpleServiceSimpleArgs{}
-				return ReadStruct(r, req)
+				return ReadStruct(context.Background(), r, req)
 			})
 
 			response := call.Response()
@@ -249,7 +248,7 @@ func TestThriftDecodeEmptyFrameClient(t *testing.T) {
 			})
 
 			withWriter(t, response.Arg3Writer, func(w tchannel.ArgWriter) error {
-				if err := WriteStruct(w, &gen.SimpleServiceSimpleResult{}); err != nil {
+				if err := WriteStruct(context.Background(), w, &gen.SimpleServiceSimpleResult{}); err != nil {
 					return err
 				}
 

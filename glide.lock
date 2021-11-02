@@ -2,7 +2,7 @@ hash: 7400b8d3d51badea662da185fd9cc0098c7a1fb0a2731b17ceae4e91f6455d1d
 updated: 2020-03-17T12:48:49.8534584+11:00
 imports:
 - name: github.com/apache/thrift
-  version: b2a4d4ae21c789b689dd162deb819665567f481c
+  version: cecee50308fc7e6f77f55b3fd906c1c6c471fa2f
   subpackages:
   - lib/go/thrift
 - name: github.com/cactus/go-statsd-client
