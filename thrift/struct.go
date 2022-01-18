@@ -21,13 +21,14 @@
 package thrift
 
 import (
+	"context"
 	"io"
 
 	"github.com/apache/thrift/lib/go/thrift"
 )
 
 // WriteStruct writes the given Thrift struct to a writer. It pools TProtocols.
-func WriteStruct(writer io.Writer, s thrift.TStruct) error {
+func WriteStruct(ctx context.Context, writer io.Writer, s thrift.TStruct) error {
 	wp := getProtocolWriter(writer)
 	err := s.Write(wp.protocol)
 	thriftProtocolPool.Put(wp)
@@ -35,7 +36,7 @@ func WriteStruct(writer io.Writer, s thrift.TStruct) error {
 }
 
 // ReadStruct reads the given Thrift struct. It pools TProtocols.
-func ReadStruct(reader io.Reader, s thrift.TStruct) error {
+func ReadStruct(ctx context.Context, reader io.Reader, s thrift.TStruct) error {
 	wp := getProtocolReader(reader)
 	err := s.Read(wp.protocol)
 	thriftProtocolPool.Put(wp)

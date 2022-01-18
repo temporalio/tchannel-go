@@ -23,7 +23,7 @@ package stats
 import (
 	"time"
 
-	"github.com/cactus/go-statsd-client/statsd"
+	"github.com/cactus/go-statsd-client/v4/statsd"
 	"github.com/uber/tchannel-go"
 )
 

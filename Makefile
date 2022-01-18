@@ -1,5 +1,5 @@
-export GO15VENDOREXPERIMENT=1
-export GO111MODULE=off
+#export GO15VENDOREXPERIMENT=1
+#export GO111MODULE=off
 
 PATH := $(GOPATH)/bin:$(PATH)
 EXAMPLES=./examples/bench/server ./examples/bench/client ./examples/ping ./examples/thrift ./examples/hyperbahn/echo-server
@@ -63,7 +63,7 @@ ifdef CROSSDOCK
 endif
 
 install_test:
-	go test -i $(TEST_ARG) $(ALL_PKGS)
+	PATH=$(BIN):$$PATH go test $(TEST_ARG) $(ALL_PKGS)
 
 help:
 	@egrep "^# target:" [Mm]akefile | sort -
@@ -148,6 +148,9 @@ thrift_gen: $(BIN)/thrift
 	PATH=$(BIN):$$PATH $(BUILD)/thrift-gen --generateThrift --inputFile examples/keyvalue/keyvalue.thrift --outputDir examples/keyvalue/gen-go
 	PATH=$(BIN):$$PATH $(BUILD)/thrift-gen --generateThrift --inputFile examples/thrift/example.thrift --outputDir examples/thrift/gen-go
 	PATH=$(BIN):$$PATH $(BUILD)/thrift-gen --generateThrift --inputFile hyperbahn/hyperbahn.thrift --outputDir hyperbahn/gen-go
+	PATH=$(BIN):$$PATH $(BUILD)/thrift-gen --generateThrift --inputFile thrift/meta.thrift --outputDir thrift/gen-go
+	rm thrift/gen-go/meta/tchan-meta.go # circular dependency, as we just want to generate thrift files here
+	PATH=$(BIN):$$PATH $(BUILD)/thrift-gen --generateThrift --inputFile thrift/test.thrift --outputDir thrift/gen-go
 
 release_thrift_gen: clean setup
 	GOOS=linux GOARCH=amd64 go build -o $(THRIFT_GEN_RELEASE_LINUX)/thrift-gen ./thrift/thrift-gen
