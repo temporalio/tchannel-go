@@ -39,6 +39,7 @@ setup:
 	mkdir -p $(BUILD)/examples
 	mkdir -p $(THRIFT_GEN_RELEASE_LINUX)
 	mkdir -p $(THRIFT_GEN_RELEASE_DARWIN)
+	touch $(BUILD)/go.mod
 
 # We want to remove `vendor` dir because thrift-gen tests don't work with it.
 # However, glide install even with --cache-gopath option leaves GOPATH at HEAD,
