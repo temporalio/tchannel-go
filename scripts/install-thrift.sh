@@ -55,7 +55,7 @@ function prepare_src() {
 function compile_linux() {
   rm -r "${THRIFT_BUILD_LINUX}"
   prepare_src
-  pushd "${THRIFT_SRC}"
+  pushd "${THRIFT_SRC}" &> /dev/null
 
   IMAGE_NAME="tchannel-go/thrift-build"
   DOCKERFILE="thrift.Dockerfile"
@@ -65,13 +65,13 @@ function compile_linux() {
 
   cp -f "${THRIFT_BUILD_LINUX}"/bin/thrift "${THRIFT_BIN_DIR}"/thrift-linux
 
-  popd
+  popd &> /dev/null
 }
 
 function compile_osx() {
   rm -r "${THRIFT_BUILD_OSX}"
   prepare_src
-  pushd "${THRIFT_SRC}"
+  pushd "${THRIFT_SRC}" &> /dev/null
 
   OSX_DEPENDENCIES="flex bison cmake"
   for dep in ${OSX_DEPENDENCIES}; do
@@ -81,7 +81,7 @@ function compile_osx() {
   THRIFT_SRC="${THRIFT_SRC}" THRIFT_BUILD="${THRIFT_BUILD_OSX}" "${SCRIPT_DIR}"/build-thrift.sh
   cp -f "${THRIFT_BUILD_OSX}"/bin/Release/thrift "${THRIFT_BIN_DIR}"/thrift-osx
 
-  popd
+  popd &> /dev/null
 }
 
 function install_thrift() {
@@ -104,7 +104,7 @@ function install_thrift() {
 }
 
 INSTALL_DIR=""
-while getopts ':co:' opt; do
+while getopts 'co:h' opt; do
   case "$opt" in
     c)
       fetch_src

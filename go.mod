@@ -17,8 +17,8 @@ require (
 	github.com/uber/jaeger-client-go v2.22.1+incompatible
 	go.uber.org/atomic v1.7.0
 	go.uber.org/multierr v1.7.0
-	golang.org/x/net v0.0.0-20190926025831-c00fd9afed17
-	golang.org/x/sys v0.0.0-20210320140829-1e4c9ba3b0c4
+	golang.org/x/net v0.0.0-20211015210444-4f30a5c0130f
+	golang.org/x/sys v0.0.0-20211019181941-9d821ace8654
 	gopkg.in/yaml.v2 v2.4.0
 )
 
@@ -29,6 +29,8 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/stretchr/objx v0.1.0 // indirect
 	github.com/uber/jaeger-lib v2.4.1+incompatible // indirect
+	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect
+	golang.org/x/tools v0.1.8 // indirect
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 )

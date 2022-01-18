@@ -194,8 +194,8 @@ func TestToServiceMethodSet(t *testing.T) {
 			desc: "single service, single method",
 			sms:  []string{"service::Method"},
 			want: map[string]map[string]struct{}{
-				"service": map[string]struct{}{
-					"Method": struct{}{},
+				"service": {
+					"Method": {},
 				},
 			},
 		},
@@ -203,10 +203,10 @@ func TestToServiceMethodSet(t *testing.T) {
 			desc: "single service, multiple methods",
 			sms:  []string{"service::Method1", "service::Method2", "service::Method3"},
 			want: map[string]map[string]struct{}{
-				"service": map[string]struct{}{
-					"Method1": struct{}{},
-					"Method2": struct{}{},
-					"Method3": struct{}{},
+				"service": {
+					"Method1": {},
+					"Method2": {},
+					"Method3": {},
 				},
 			},
 		},
@@ -214,14 +214,14 @@ func TestToServiceMethodSet(t *testing.T) {
 			desc: "multiple services, single method",
 			sms:  []string{"service1::Method1", "service2::Method1", "service3::Method1"},
 			want: map[string]map[string]struct{}{
-				"service1": map[string]struct{}{
-					"Method1": struct{}{},
+				"service1": {
+					"Method1": {},
 				},
-				"service2": map[string]struct{}{
-					"Method1": struct{}{},
+				"service2": {
+					"Method1": {},
 				},
-				"service3": map[string]struct{}{
-					"Method1": struct{}{},
+				"service3": {
+					"Method1": {},
 				},
 			},
 		},
@@ -229,13 +229,13 @@ func TestToServiceMethodSet(t *testing.T) {
 			desc: "multiple services, multiple methods",
 			sms:  []string{"service1::Method1", "service1::Method2", "service2::Method1", "service2::Method2"},
 			want: map[string]map[string]struct{}{
-				"service1": map[string]struct{}{
-					"Method1": struct{}{},
-					"Method2": struct{}{},
+				"service1": {
+					"Method1": {},
+					"Method2": {},
 				},
-				"service2": map[string]struct{}{
-					"Method1": struct{}{},
-					"Method2": struct{}{},
+				"service2": {
+					"Method1": {},
+					"Method2": {},
 				},
 			},
 		},

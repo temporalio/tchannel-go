@@ -23,7 +23,7 @@ if [ "$(uname -s)" == "Darwin" ]; then
     OS_FLAGS="-DCMAKE_CONFIGURATION_TYPES=Release -G Xcode"
 fi
 
-pushd "${THRIFT_BUILD}"
+pushd "${THRIFT_BUILD}" &> /dev/null
 cmake ${CMAKE_FLAGS} ${OS_FLAGS} "${THRIFT_SRC}"/compiler/cpp
 cmake --build .
-popd
+popd &> /dev/null
