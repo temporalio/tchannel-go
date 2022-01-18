@@ -10,9 +10,10 @@ if [[ ${OS_TYPE} == 'darwin'* ]]; then
   SHA256_CMD="shasum -U -a 256 -c"
 fi
 
-# Thrift releases found at https://thrift.apache.org/download
-THRIFT_VERSION="0.13.0"
-THRIFT_SHA256="7ad348b88033af46ce49148097afe354d513c1fca7c607b59c33ebb6064b5179"
+# Thrift releases found at https://thrift.apache.org/download.
+# To update this, you need to update the version, SHA256, and then run install-thrift.sh -c
+THRIFT_VERSION="0.15.0"
+THRIFT_SHA256="d5883566d161f8f6ddd4e21f3a9e3e6b8272799d054820f1c25b11e86718f86b"
 THRIFT_TAR="thrift-${THRIFT_VERSION}.tar.gz"
 THRIFT_URL="https://dlcdn.apache.org/thrift/${THRIFT_VERSION}/${THRIFT_TAR}"
 

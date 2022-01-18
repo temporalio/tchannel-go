@@ -3,7 +3,7 @@ module github.com/uber/tchannel-go
 go 1.17
 
 require (
-	github.com/apache/thrift v0.13.0
+	github.com/apache/thrift v0.15.0
 	github.com/bmizerany/perks v0.0.0-20141205001514-d9a9656a3a4b
 	github.com/cactus/go-statsd-client/v4 v4.0.0
 	github.com/crossdock/crossdock-go v0.0.0-20160816171116-049aabb0122b
@@ -29,8 +29,6 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/stretchr/objx v0.1.0 // indirect
 	github.com/uber/jaeger-lib v2.4.1+incompatible // indirect
-	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect
-	golang.org/x/tools v0.1.8 // indirect
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 )

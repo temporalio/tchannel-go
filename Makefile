@@ -121,6 +121,7 @@ thrift_gen: $(BIN)/thrift
 	PATH=$(BIN):$$PATH $(BUILD)/thrift-gen --generateThrift --inputFile thrift/meta.thrift --outputDir thrift/gen-go
 	rm thrift/gen-go/meta/tchan-meta.go # circular dependency, as we just want to generate thrift files here
 	PATH=$(BIN):$$PATH $(BUILD)/thrift-gen --generateThrift --inputFile thrift/test.thrift --outputDir thrift/gen-go
+	git ls-files | grep ".go$$" | xargs gofmt -l -s -w
 
 release_thrift_gen: clean setup
 	GOOS=linux GOARCH=amd64 go build -o $(THRIFT_GEN_RELEASE_LINUX)/thrift-gen ./thrift/thrift-gen

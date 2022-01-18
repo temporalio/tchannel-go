@@ -21,6 +21,7 @@
 package thrift_test
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -41,7 +42,7 @@ import (
 func serializeStruct(t *testing.T, s thrift.TStruct) []byte {
 	trans := thrift.NewTMemoryBuffer()
 	p := thrift.NewTBinaryProtocolTransport(trans)
-	require.NoError(t, s.Write(p), "Struct serialization failed")
+	require.NoError(t, s.Write(context.Background(), p), "Struct serialization failed")
 	return trans.Bytes()
 }
 
@@ -57,7 +58,6 @@ func TestInvalidThriftBytes(t *testing.T) {
 	mock := new(mocks.TChanSecondService)
 	svr.Register(gen.NewTChanSecondServiceServer(mock))
 
-	// TODO(tszucs): But why?!
 	mock.On("Echo", ctxArg(), "").Return("", tchannel.NewSystemError(tchannel.ErrCodeBadRequest, ""))
 
 	tests := []struct {

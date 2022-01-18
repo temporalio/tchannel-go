@@ -30,7 +30,7 @@ import (
 // WriteStruct writes the given Thrift struct to a writer. It pools TProtocols.
 func WriteStruct(ctx context.Context, writer io.Writer, s thrift.TStruct) error {
 	wp := getProtocolWriter(writer)
-	err := s.Write(wp.protocol)
+	err := s.Write(ctx, wp.protocol)
 	thriftProtocolPool.Put(wp)
 	return err
 }
@@ -38,7 +38,7 @@ func WriteStruct(ctx context.Context, writer io.Writer, s thrift.TStruct) error 
 // ReadStruct reads the given Thrift struct. It pools TProtocols.
 func ReadStruct(ctx context.Context, reader io.Reader, s thrift.TStruct) error {
 	wp := getProtocolReader(reader)
-	err := s.Read(wp.protocol)
+	err := s.Read(ctx, wp.protocol)
 	thriftProtocolPool.Put(wp)
 	return err
 }
