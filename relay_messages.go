@@ -26,9 +26,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/uber/tchannel-go/relay"
-	"github.com/uber/tchannel-go/thrift/arg2"
-	"github.com/uber/tchannel-go/typed"
+	"github.com/temporalio/tchannel-go/relay"
+	"github.com/temporalio/tchannel-go/thrift/arg2"
+	"github.com/temporalio/tchannel-go/typed"
 )
 
 var _ relay.RespFrame = (*lazyCallRes)(nil)

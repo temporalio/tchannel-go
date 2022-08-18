@@ -24,17 +24,17 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/uber/tchannel-go"
+	"github.com/temporalio/tchannel-go"
 
-	"github.com/uber/tchannel-go/raw"
-	"github.com/uber/tchannel-go/testutils"
+	"github.com/temporalio/tchannel-go/raw"
+	"github.com/temporalio/tchannel-go/testutils"
 
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
 )
 
 func TestRequestStateRetry(t *testing.T) {
-	ctx, cancel := NewContext(time.Second)
+	ctx, cancel := tchannel.NewContext(time.Second)
 	defer cancel()
 
 	testutils.WithTestServer(t, nil, func(t testing.TB, ts *testutils.TestServer) {
@@ -54,7 +54,7 @@ func TestRequestStateRetry(t *testing.T) {
 		counter := 0
 
 		sc := client.GetSubChannel(ts.Server().ServiceName())
-		err := client.RunWithRetry(ctx, func(ctx context.Context, rs *RequestState) error {
+		err := client.RunWithRetry(ctx, func(ctx context.Context, rs *tchannel.RequestState) error {
 			defer func() { counter++ }()
 
 			expectedPeers := counter
@@ -73,7 +73,7 @@ func TestRequestStateRetry(t *testing.T) {
 
 			_, err := raw.CallV2(ctx, sc, raw.CArgs{
 				Method:      "echo",
-				CallOptions: &CallOptions{RequestState: rs},
+				CallOptions: &tchannel.CallOptions{RequestState: rs},
 			})
 			return err
 		})

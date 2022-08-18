@@ -27,18 +27,18 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/uber/tchannel-go"
+	"github.com/temporalio/tchannel-go"
 
-	"github.com/uber/tchannel-go/benchmark"
-	"github.com/uber/tchannel-go/raw"
-	"github.com/uber/tchannel-go/testutils"
+	"github.com/temporalio/tchannel-go/benchmark"
+	"github.com/temporalio/tchannel-go/raw"
+	"github.com/temporalio/tchannel-go/testutils"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/atomic"
 )
 
-func fakePeer(t *testing.T, ch *Channel, hostPort string) *Peer {
+func fakePeer(t *testing.T, ch *tchannel.Channel, hostPort string) *tchannel.Peer {
 	ch.Peers().Add(hostPort)
 
 	peer, err := ch.Peers().Get(nil)
@@ -52,7 +52,7 @@ func fakePeer(t *testing.T, ch *Channel, hostPort string) *Peer {
 	return peer
 }
 
-func assertNumConnections(t *testing.T, peer *Peer, in, out int) {
+func assertNumConnections(t *testing.T, peer *tchannel.Peer, in, out int) {
 	actualIn, actualOut := peer.NumConnections()
 	assert.Equal(t, actualIn, in, "Expected %v incoming connection.", in)
 	assert.Equal(t, actualOut, out, "Expected %v outgoing connection.", out)
@@ -62,7 +62,7 @@ func TestGetPeerNoPeer(t *testing.T) {
 	ch := testutils.NewClient(t, nil)
 	defer ch.Close()
 	peer, err := ch.Peers().Get(nil)
-	assert.Equal(t, ErrNoPeers, err, "Empty peer list should return error")
+	assert.Equal(t, tchannel.ErrNoPeers, err, "Empty peer list should return error")
 	assert.Nil(t, peer, "should not return peer")
 }
 
@@ -152,12 +152,12 @@ func TestGetPeerAvoidPrevSelected(t *testing.T) {
 	}
 
 	for i, tt := range tests {
-		peers := ch.GetSubChannel(fmt.Sprintf("test%d", i), Isolated).Peers()
+		peers := ch.GetSubChannel(fmt.Sprintf("test%d", i), tchannel.Isolated).Peers()
 		for _, p := range tt.peers {
 			peers.Add(p)
 		}
 
-		rs := &RequestState{}
+		rs := &tchannel.RequestState{}
 		for _, selected := range tt.prevSelected {
 			rs.AddSelectedPeer(selected)
 		}
@@ -170,7 +170,7 @@ func TestGetPeerAvoidPrevSelected(t *testing.T) {
 
 		newPeer, err := peers.GetNew(rs.PrevSelectedPeers())
 		if len(tt.peers) == len(tt.prevSelected) {
-			if newPeer != nil || err != ErrNoNewPeers {
+			if newPeer != nil || err != tchannel.ErrNoNewPeers {
 				t.Errorf("%s: newPeer should not have been found %v: %v\n", tt.msg, newPeer, err)
 			}
 		} else {
@@ -189,10 +189,10 @@ func TestGetPeerAvoidPrevSelected(t *testing.T) {
 }
 
 func TestPeerRemoveClosedConnection(t *testing.T) {
-	ctx, cancel := NewContext(time.Second)
+	ctx, cancel := tchannel.NewContext(time.Second)
 	defer cancel()
 
-	WithVerifiedServer(t, nil, func(ch *Channel, hostPort string) {
+	WithVerifiedServer(t, nil, func(ch *tchannel.Channel, hostPort string) {
 		client := testutils.NewClient(t, nil)
 		defer client.Close()
 
@@ -217,28 +217,28 @@ func TestPeerRemoveClosedConnection(t *testing.T) {
 }
 
 func TestPeerConnectCancelled(t *testing.T) {
-	WithVerifiedServer(t, nil, func(ch *Channel, hostPort string) {
-		ctx, cancel := NewContext(100 * time.Millisecond)
+	WithVerifiedServer(t, nil, func(ch *tchannel.Channel, hostPort string) {
+		ctx, cancel := tchannel.NewContext(100 * time.Millisecond)
 		cancel()
 
 		_, err := ch.Connect(ctx, "10.255.255.1:1")
 		require.Error(t, err, "Connect should fail")
-		assert.EqualError(t, err, ErrRequestCancelled.Error(), "Unexpected error")
+		assert.EqualError(t, err, tchannel.ErrRequestCancelled.Error(), "Unexpected error")
 	})
 }
 
 func TestPeerGetConnectionWithNoActiveConnections(t *testing.T) {
-	ctx, cancel := NewContext(time.Second)
+	ctx, cancel := tchannel.NewContext(time.Second)
 	defer cancel()
 
-	WithVerifiedServer(t, nil, func(ch *Channel, hostPort string) {
+	WithVerifiedServer(t, nil, func(ch *tchannel.Channel, hostPort string) {
 		client := testutils.NewClient(t, nil)
 		defer client.Close()
 
 		var (
 			wg          sync.WaitGroup
 			lock        sync.Mutex
-			conn        *Connection
+			conn        *tchannel.Connection
 			concurrency = 10
 			p           = client.Peers().Add(hostPort)
 		)
@@ -270,12 +270,12 @@ func TestPeerGetConnectionWithNoActiveConnections(t *testing.T) {
 }
 
 func TestInboundEphemeralPeerRemoved(t *testing.T) {
-	ctx, cancel := NewContext(time.Second)
+	ctx, cancel := tchannel.NewContext(time.Second)
 	defer cancel()
 
 	// No relay, since we look for the exact host:port in peer lists.
 	opts := testutils.NewOpts().NoRelay()
-	WithVerifiedServer(t, opts, func(ch *Channel, hostPort string) {
+	WithVerifiedServer(t, opts, func(ch *tchannel.Channel, hostPort string) {
 		client := testutils.NewClient(t, nil)
 		assert.NoError(t, client.Ping(ctx, hostPort), "Ping to server failed")
 
@@ -289,7 +289,7 @@ func TestInboundEphemeralPeerRemoved(t *testing.T) {
 		waitTillInboundEmpty(t, ch, clientHP, func() {
 			client.Close()
 		})
-		assert.Equal(t, ChannelClosed, client.State(), "Client should be closed")
+		assert.Equal(t, tchannel.ChannelClosed, client.State(), "Client should be closed")
 
 		_, ok := ch.RootPeers().Get(clientHP)
 		assert.False(t, ok, "server's root peers should remove peer for client on close")
@@ -297,10 +297,10 @@ func TestInboundEphemeralPeerRemoved(t *testing.T) {
 }
 
 func TestOutboundEphemeralPeerRemoved(t *testing.T) {
-	ctx, cancel := NewContext(time.Second)
+	ctx, cancel := tchannel.NewContext(time.Second)
 	defer cancel()
 
-	WithVerifiedServer(t, nil, func(ch *Channel, hostPort string) {
+	WithVerifiedServer(t, nil, func(ch *tchannel.Channel, hostPort string) {
 		outbound := testutils.NewServer(t, testutils.NewOpts().SetServiceName("asd	"))
 		assert.NoError(t, ch.Ping(ctx, outbound.PeerInfo().HostPort), "Ping to outbound failed")
 		outboundHP := outbound.PeerInfo().HostPort
@@ -309,7 +309,7 @@ func TestOutboundEphemeralPeerRemoved(t *testing.T) {
 		waitTillNConnections(t, ch, outboundHP, 0, 0, func() {
 			outbound.Close()
 		})
-		assert.Equal(t, ChannelClosed, outbound.State(), "Outbound should be closed")
+		assert.Equal(t, tchannel.ChannelClosed, outbound.State(), "Outbound should be closed")
 
 		_, ok := ch.RootPeers().Get(outboundHP)
 		assert.False(t, ok, "server's root peers should remove outbound peer")
@@ -317,10 +317,10 @@ func TestOutboundEphemeralPeerRemoved(t *testing.T) {
 }
 
 func TestOutboundPeerNotAdded(t *testing.T) {
-	ctx, cancel := NewContext(time.Second)
+	ctx, cancel := tchannel.NewContext(time.Second)
 	defer cancel()
 
-	WithVerifiedServer(t, nil, func(server *Channel, hostPort string) {
+	WithVerifiedServer(t, nil, func(server *tchannel.Channel, hostPort string) {
 		server.Register(raw.Wrap(newTestHandler(t)), "echo")
 
 		ch := testutils.NewClient(t, nil)
@@ -330,7 +330,7 @@ func TestOutboundPeerNotAdded(t *testing.T) {
 		raw.Call(ctx, ch, hostPort, server.PeerInfo().ServiceName, "echo", nil, nil)
 
 		peer, err := ch.Peers().Get(nil)
-		assert.Equal(t, ErrNoPeers, err, "Ping should not add peers")
+		assert.Equal(t, tchannel.ErrNoPeers, err, "Ping should not add peers")
 		assert.Nil(t, peer, "Expected no peer to be returned")
 	})
 }
@@ -366,12 +366,12 @@ func TestPeerRemovedFromRootPeers(t *testing.T) {
 		},
 	}
 
-	ctx, cancel := NewContext(time.Second)
+	ctx, cancel := tchannel.NewContext(time.Second)
 	defer cancel()
 
 	for _, tt := range tests {
 		opts := testutils.NewOpts().NoRelay()
-		WithVerifiedServer(t, opts, func(server *Channel, hostPort string) {
+		WithVerifiedServer(t, opts, func(server *tchannel.Channel, hostPort string) {
 			ch := testutils.NewServer(t, nil)
 			clientHP := ch.PeerInfo().HostPort
 
@@ -397,10 +397,10 @@ func TestPeerRemovedFromRootPeers(t *testing.T) {
 }
 
 func TestPeerSelectionConnClosed(t *testing.T) {
-	ctx, cancel := NewContext(time.Second)
+	ctx, cancel := tchannel.NewContext(time.Second)
 	defer cancel()
 
-	WithVerifiedServer(t, nil, func(server *Channel, hostPort string) {
+	WithVerifiedServer(t, nil, func(server *tchannel.Channel, hostPort string) {
 		client := testutils.NewServer(t, nil)
 		defer client.Close()
 
@@ -477,8 +477,8 @@ func TestPeerSelectionPreferIncoming(t *testing.T) {
 		// We need to directly connect from the server to the client and verify
 		// the exact peers.
 		opts := testutils.NewOpts().NoRelay()
-		WithVerifiedServer(t, opts, func(ch *Channel, hostPort string) {
-			ctx, cancel := NewContext(time.Second)
+		WithVerifiedServer(t, opts, func(ch *tchannel.Channel, hostPort string) {
+			ctx, cancel := tchannel.NewContext(time.Second)
 			defer cancel()
 
 			selectedIncoming := make(map[string]int)
@@ -487,7 +487,7 @@ func TestPeerSelectionPreferIncoming(t *testing.T) {
 
 			peers := ch.Peers()
 			if tt.isolated {
-				peers = ch.GetSubChannel("isolated", Isolated).Peers()
+				peers = ch.GetSubChannel("isolated", tchannel.Isolated).Peers()
 			}
 
 			// 5 peers that make incoming connections to ch.
@@ -574,11 +574,11 @@ func TestPeerSelectionPreferIncoming(t *testing.T) {
 
 type peerTest struct {
 	t        testing.TB
-	channels []*Channel
+	channels []*tchannel.Channel
 }
 
 // NewService will return a new server channel and the host port.
-func (pt *peerTest) NewService(t testing.TB, svcName, processName string) (*Channel, string) {
+func (pt *peerTest) NewService(t testing.TB, svcName, processName string) (*tchannel.Channel, string) {
 	opts := testutils.NewOpts().SetServiceName(svcName).SetProcessName(processName)
 	ch := testutils.NewServer(t, opts)
 	pt.channels = append(pt.channels, ch)
@@ -595,9 +595,9 @@ func (pt *peerTest) CleanUp() {
 func TestPeerSelection(t *testing.T) {
 	pt := &peerTest{t: t}
 	defer pt.CleanUp()
-	WithVerifiedServer(t, &testutils.ChannelOpts{ServiceName: "S1"}, func(ch *Channel, hostPort string) {
-		doPing := func(ch *Channel) {
-			ctx, cancel := NewContext(time.Second)
+	WithVerifiedServer(t, &testutils.ChannelOpts{ServiceName: "S1"}, func(ch *tchannel.Channel, hostPort string) {
+		doPing := func(ch *tchannel.Channel) {
+			ctx, cancel := tchannel.NewContext(time.Second)
 			defer cancel()
 			assert.NoError(t, ch.Ping(ctx, hostPort), "Ping failed")
 		}
@@ -614,7 +614,7 @@ func TestPeerSelection(t *testing.T) {
 	})
 }
 
-func getAllPeers(t *testing.T, pl *PeerList) []string {
+func getAllPeers(t *testing.T, pl *tchannel.PeerList) []string {
 	prevSelected := make(map[string]struct{})
 	var got []string
 
@@ -647,7 +647,7 @@ func TestIsolatedPeerHeap(t *testing.T) {
 	defer ch.Close()
 
 	ps1 := createSubChannelWNewStrategy(ch, "S1", numPeers, 1)
-	ps2 := createSubChannelWNewStrategy(ch, "S2", numPeers, -1, Isolated)
+	ps2 := createSubChannelWNewStrategy(ch, "S2", numPeers, -1, tchannel.Isolated)
 
 	hostports := make([]string, numPeers)
 	for i := 0; i < numPeers; i++ {
@@ -697,19 +697,19 @@ func TestPeerSelectionRanking(t *testing.T) {
 	}
 }
 
-func createScoreStrategy(initial, delta int64) (calc ScoreCalculator, retCount *atomic.Uint64) {
+func createScoreStrategy(initial, delta int64) (calc tchannel.ScoreCalculator, retCount *atomic.Uint64) {
 	var (
 		count atomic.Uint64
 		score atomic.Uint64
 	)
 
-	return ScoreCalculatorFunc(func(p *Peer) uint64 {
+	return tchannel.ScoreCalculatorFunc(func(p *tchannel.Peer) uint64 {
 		count.Add(1)
 		return score.Add(uint64(delta))
 	}), &count
 }
 
-func createSubChannelWNewStrategy(ch *Channel, name string, initial, delta int64, opts ...SubChannelOption) *PeerList {
+func createSubChannelWNewStrategy(ch *tchannel.Channel, name string, initial, delta int64, opts ...tchannel.SubChannelOption) *tchannel.PeerList {
 	strategy, _ := createScoreStrategy(initial, delta)
 	sc := ch.GetSubChannel(name, opts...)
 	ps := sc.Peers()
@@ -728,7 +728,7 @@ func testDistribution(t testing.TB, counts map[string]int, min, max float64) {
 // waitTillNConnetions will run f which should end up causing the peer with hostPort in ch
 // to have the specified number of inbound and outbound connections.
 // If the number of connections does not match after a second, the test is failed.
-func waitTillNConnections(t *testing.T, ch *Channel, hostPort string, inbound, outbound int, f func()) {
+func waitTillNConnections(t *testing.T, ch *tchannel.Channel, hostPort string, inbound, outbound int, f func()) {
 	peer, ok := ch.RootPeers().Get(hostPort)
 	if !ok {
 		return
@@ -741,7 +741,7 @@ func waitTillNConnections(t *testing.T, ch *Channel, hostPort string, inbound, o
 
 	inboundEmpty := make(chan struct{})
 	var onUpdateOnce sync.Once
-	onUpdate := func(p *Peer) {
+	onUpdate := func(p *tchannel.Peer) {
 		if i, o = p.NumConnections(); (i == inbound || inbound == -1) &&
 			(o == outbound || outbound == -1) {
 			onUpdateOnce.Do(func() {
@@ -764,7 +764,7 @@ func waitTillNConnections(t *testing.T, ch *Channel, hostPort string, inbound, o
 
 // waitTillInboundEmpty will run f which should end up causing the peer with hostPort in ch
 // to have 0 inbound connections. It will fail the test after a second.
-func waitTillInboundEmpty(t *testing.T, ch *Channel, hostPort string, f func()) {
+func waitTillInboundEmpty(t *testing.T, ch *tchannel.Channel, hostPort string, f func()) {
 	waitTillNConnections(t, ch, hostPort, 0, -1, f)
 }
 
@@ -782,10 +782,10 @@ type peerSelectionTest struct {
 	// hasInboundCall is the bool flag to tell whether to have inbound calls from affinity nodes
 	hasInboundCall bool
 
-	servers            []*Channel
-	affinity           []*Channel
-	affinityWithNoCall []*Channel
-	client             *Channel
+	servers            []*tchannel.Channel
+	affinity           []*tchannel.Channel
+	affinityWithNoCall []*tchannel.Channel
+	client             *tchannel.Channel
 }
 
 func (pt *peerSelectionTest) setup(t testing.TB) {
@@ -796,7 +796,7 @@ func (pt *peerSelectionTest) setup(t testing.TB) {
 
 // setupServers will create numPeer servers, and register handlers on them.
 func (pt *peerSelectionTest) setupServers(t testing.TB) {
-	pt.servers = make([]*Channel, pt.numPeers)
+	pt.servers = make([]*tchannel.Channel, pt.numPeers)
 
 	// Set up numPeers servers.
 	for i := 0; i < pt.numPeers; i++ {
@@ -806,12 +806,12 @@ func (pt *peerSelectionTest) setupServers(t testing.TB) {
 }
 
 func (pt *peerSelectionTest) setupAffinity(t testing.TB) {
-	pt.affinity = make([]*Channel, pt.numAffinity)
+	pt.affinity = make([]*tchannel.Channel, pt.numAffinity)
 	for i := range pt.affinity {
 		pt.affinity[i] = pt.servers[i]
 	}
 
-	pt.affinityWithNoCall = make([]*Channel, pt.numAffinityWithNoCall)
+	pt.affinityWithNoCall = make([]*tchannel.Channel, pt.numAffinityWithNoCall)
 	for i := range pt.affinityWithNoCall {
 		pt.affinityWithNoCall[i] = pt.servers[i+pt.numAffinity]
 	}
@@ -822,7 +822,7 @@ func (pt *peerSelectionTest) setupAffinity(t testing.TB) {
 	hostport := pt.client.PeerInfo().HostPort
 	serviceName := pt.client.PeerInfo().ServiceName
 	for _, affinity := range pt.affinity {
-		go func(affinity *Channel) {
+		go func(affinity *tchannel.Channel) {
 			affinity.Peers().Add(hostport)
 			pt.makeCall(affinity.GetSubChannel(serviceName))
 			wg.Done()
@@ -832,7 +832,7 @@ func (pt *peerSelectionTest) setupAffinity(t testing.TB) {
 
 	wg.Add(pt.numAffinityWithNoCall)
 	for _, p := range pt.affinityWithNoCall {
-		go func(p *Channel) {
+		go func(p *tchannel.Channel) {
 			// use ping to build connection without sending call req.
 			pt.sendPing(p, hostport)
 			wg.Done()
@@ -849,15 +849,15 @@ func (pt *peerSelectionTest) setupClient(t testing.TB) {
 	}
 }
 
-func (pt *peerSelectionTest) makeCall(sc *SubChannel) {
-	ctx, cancel := NewContext(time.Second)
+func (pt *peerSelectionTest) makeCall(sc *tchannel.SubChannel) {
+	ctx, cancel := tchannel.NewContext(time.Second)
 	defer cancel()
 	_, _, _, err := raw.CallSC(ctx, sc, "echo", nil, nil)
 	assert.NoError(pt.t, err, "raw.Call failed")
 }
 
-func (pt *peerSelectionTest) sendPing(ch *Channel, hostport string) {
-	ctx, cancel := NewContext(time.Second)
+func (pt *peerSelectionTest) sendPing(ch *tchannel.Channel, hostport string) {
+	ctx, cancel := tchannel.NewContext(time.Second)
 	defer cancel()
 	err := ch.Ping(ctx, hostport)
 	assert.NoError(pt.t, err, "ping failed")
@@ -870,7 +870,7 @@ func (pt *peerSelectionTest) runStressSimple(b *testing.B) {
 	// server outbound request
 	sc := pt.client.GetSubChannel("server")
 	for i := 0; i < pt.numConcurrent; i++ {
-		go func(sc *SubChannel) {
+		go func(sc *tchannel.SubChannel) {
 			defer wg.Done()
 			for j := 0; j < b.N; j++ {
 				pt.makeCall(sc)
@@ -892,7 +892,7 @@ func (pt *peerSelectionTest) runStress() {
 	wg.Add(numClock)
 
 	// helper that will make a request every n ticks.
-	reqEveryNTicks := func(n int, sc *SubChannel, clock <-chan struct{}) {
+	reqEveryNTicks := func(n int, sc *tchannel.SubChannel, clock <-chan struct{}) {
 		defer wg.Done()
 		for {
 			for i := 0; i < n; i++ {
@@ -1002,8 +1002,8 @@ func peerHeapStress(t testing.TB, numserver int, affinityRatio float64, numConcu
 	validateStressTest(t, pt.client, pt.numAffinity, pt.numAffinityWithNoCall)
 }
 
-func validateStressTest(t testing.TB, server *Channel, numAffinity int, numAffinityWithNoCall int) {
-	state := server.IntrospectState(&IntrospectionOptions{IncludeEmptyPeers: true})
+func validateStressTest(t testing.TB, server *tchannel.Channel, numAffinity int, numAffinityWithNoCall int) {
+	state := server.IntrospectState(&tchannel.IntrospectionOptions{IncludeEmptyPeers: true})
 
 	countsByPeer := make(map[string]int)
 	var counts []int
@@ -1051,23 +1051,23 @@ func TestPeerSelectionAfterClosed(t *testing.T) {
 func TestPeerScoreOnNewConnection(t *testing.T) {
 	tests := []struct {
 		message string
-		connect func(s1, s2 *Channel) *Peer
+		connect func(s1, s2 *tchannel.Channel) *tchannel.Peer
 	}{
 		{
 			message: "outbound connection",
-			connect: func(s1, s2 *Channel) *Peer {
+			connect: func(s1, s2 *tchannel.Channel) *tchannel.Peer {
 				return s1.Peers().GetOrAdd(s2.PeerInfo().HostPort)
 			},
 		},
 		{
 			message: "inbound connection",
-			connect: func(s1, s2 *Channel) *Peer {
+			connect: func(s1, s2 *tchannel.Channel) *tchannel.Peer {
 				return s2.Peers().GetOrAdd(s1.PeerInfo().HostPort)
 			},
 		},
 	}
 
-	getScore := func(pl *PeerList) uint64 {
+	getScore := func(pl *tchannel.PeerList) uint64 {
 		peers := pl.IntrospectList(nil)
 		require.Equal(t, 1, len(peers), "Wrong number of peers")
 		return peers[0].Score
@@ -1075,7 +1075,7 @@ func TestPeerScoreOnNewConnection(t *testing.T) {
 
 	for _, tt := range tests {
 		testutils.WithTestServer(t, nil, func(t testing.TB, ts *testutils.TestServer) {
-			ctx, cancel := NewContext(time.Second)
+			ctx, cancel := tchannel.NewContext(time.Second)
 			defer cancel()
 
 			s1 := ts.Server()
@@ -1105,7 +1105,7 @@ func TestPeerScoreOnNewConnection(t *testing.T) {
 
 func TestConnectToPeerHostPortMismatch(t *testing.T) {
 	testutils.WithTestServer(t, nil, func(t testing.TB, ts *testutils.TestServer) {
-		ctx, cancel := NewContext(time.Second)
+		ctx, cancel := tchannel.NewContext(time.Second)
 		defer cancel()
 
 		// Set up a relay which will have a different host:port than the
@@ -1194,8 +1194,8 @@ func TestPeerSelectionStrategyChange(t *testing.T) {
 	}
 }
 
-func createConstScoreStrategy(score uint64) (calc ScoreCalculator) {
-	return ScoreCalculatorFunc(func(p *Peer) uint64 {
+func createConstScoreStrategy(score uint64) (calc tchannel.ScoreCalculator) {
+	return tchannel.ScoreCalculatorFunc(func(p *tchannel.Peer) uint64 {
 		return score
 	})
 }

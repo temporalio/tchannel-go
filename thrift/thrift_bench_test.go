@@ -25,8 +25,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/uber/tchannel-go/benchmark"
-	"github.com/uber/tchannel-go/testutils"
+	"github.com/temporalio/tchannel-go/benchmark"
+	"github.com/temporalio/tchannel-go/testutils"
 
 	"github.com/stretchr/testify/require"
 	"go.uber.org/atomic"

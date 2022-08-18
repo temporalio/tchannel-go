@@ -6,9 +6,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/uber/tchannel-go/relay"
-	"github.com/uber/tchannel-go/testutils/thriftarg2test"
-	"github.com/uber/tchannel-go/typed"
+	"github.com/temporalio/tchannel-go/relay"
+	"github.com/temporalio/tchannel-go/testutils/thriftarg2test"
+	"github.com/temporalio/tchannel-go/typed"
 )
 
 type dummyFrameReceiver struct {

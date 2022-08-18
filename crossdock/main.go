@@ -23,15 +23,15 @@ package main
 import (
 	"io"
 
-	"github.com/uber/tchannel-go/crossdock/client"
-	"github.com/uber/tchannel-go/crossdock/log"
-	"github.com/uber/tchannel-go/crossdock/server"
+	"github.com/temporalio/tchannel-go/crossdock/client"
+	"github.com/temporalio/tchannel-go/crossdock/log"
+	"github.com/temporalio/tchannel-go/crossdock/server"
 
 	"github.com/crossdock/crossdock-go"
 	"github.com/opentracing/opentracing-go"
 	"github.com/uber/jaeger-client-go"
-	"github.com/uber/tchannel-go/crossdock/behavior/trace"
-	"github.com/uber/tchannel-go/crossdock/common"
+	"github.com/temporalio/tchannel-go/crossdock/behavior/trace"
+	"github.com/temporalio/tchannel-go/crossdock/common"
 )
 
 func main() {

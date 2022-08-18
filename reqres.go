@@ -23,7 +23,7 @@ package tchannel
 import (
 	"fmt"
 
-	"github.com/uber/tchannel-go/typed"
+	"github.com/temporalio/tchannel-go/typed"
 )
 
 type errReqResWriterStateMismatch struct {

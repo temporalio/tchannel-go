@@ -24,10 +24,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/uber/tchannel-go"
-	"github.com/uber/tchannel-go/relay"
-	"github.com/uber/tchannel-go/testutils/thriftarg2test"
-	"github.com/uber/tchannel-go/thrift/arg2"
+	"github.com/temporalio/tchannel-go"
+	"github.com/temporalio/tchannel-go/relay"
+	"github.com/temporalio/tchannel-go/testutils/thriftarg2test"
+	"github.com/temporalio/tchannel-go/thrift/arg2"
 )
 
 // FakeIncomingCall implements IncomingCall interface.

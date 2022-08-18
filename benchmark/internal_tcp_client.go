@@ -26,7 +26,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/uber/tchannel-go"
+	"github.com/temporalio/tchannel-go"
 )
 
 // internalTCPClient represents a TCP client that makes

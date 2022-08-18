@@ -24,7 +24,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/uber/tchannel-go/testutils/testreader"
+	"github.com/temporalio/tchannel-go/testutils/testreader"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

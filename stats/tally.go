@@ -4,7 +4,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/uber/tchannel-go"
+	"github.com/temporalio/tchannel-go"
 
 	"github.com/uber-go/tally"
 )

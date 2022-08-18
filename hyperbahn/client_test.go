@@ -27,8 +27,8 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/uber/tchannel-go"
-	"github.com/uber/tchannel-go/testutils"
+	"github.com/temporalio/tchannel-go"
+	"github.com/temporalio/tchannel-go/testutils"
 
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v2"

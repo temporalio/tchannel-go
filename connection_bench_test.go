@@ -17,21 +17,22 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
-
 package tchannel_test
 
+/*
 import (
 	"runtime"
 	"sync"
 	"testing"
 	"time"
 
-	. "github.com/uber/tchannel-go"
-
-	"github.com/uber/tchannel-go/raw"
-	"github.com/uber/tchannel-go/testutils"
-
 	"github.com/streadway/quantile"
+
+	"github.com/temporalio/tchannel-go"
+
+	"github.com/temporalio/tchannel-go/raw"
+	"github.com/temporalio/tchannel-go/testutils"
+
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
 )
@@ -91,7 +92,7 @@ func (lt *latencyTracker) report(t testing.TB) {
 	lt.Unlock()
 }
 
-func setupServer(t testing.TB) *Channel {
+func setupServer(t testing.TB) *tchannel.Channel {
 	serverCh := testutils.NewServer(t, testutils.NewOpts().SetServiceName("bench-server"))
 	handler := &benchmarkHandler{}
 	serverCh.Register(raw.Wrap(handler), "echo")
@@ -108,8 +109,8 @@ type benchmarkConfig struct {
 
 func benchmarkCallsN(b *testing.B, c benchmarkConfig) {
 	var (
-		clients []*Channel
-		servers []*Channel
+		clients []*tchannel.Channel
+		servers []*tchannel.Channel
 	)
 	lt := newLatencyTracker()
 
@@ -128,15 +129,15 @@ func benchmarkCallsN(b *testing.B, c benchmarkConfig) {
 			clients[i].Peers().Add(s.PeerInfo().HostPort)
 
 			// Initialize a connection
-			ctx, cancel := NewContext(50 * time.Millisecond)
+			ctx, cancel := tchannel.NewContext(50 * time.Millisecond)
 			assert.NoError(b, clients[i].Ping(ctx, s.PeerInfo().HostPort), "Initial ping failed")
 			cancel()
 		}
 	}
 
 	// Make calls from clients to the servers
-	call := func(sc *SubChannel) {
-		ctx, cancel := NewContext(50 * time.Millisecond)
+	call := func(sc *tchannel.SubChannel) {
+		ctx, cancel := tchannel.NewContext(50 * time.Millisecond)
 		start := time.Now()
 		_, _, _, err := raw.CallSC(ctx, sc, "echo", nil, data)
 		duration := time.Since(start)
@@ -147,13 +148,13 @@ func benchmarkCallsN(b *testing.B, c benchmarkConfig) {
 	}
 
 	reqsLeft := testutils.Decrementor(c.numCalls)
-	clientWorker := func(client *Channel, clientNum, workerNum int) {
+	clientWorker := func(client *tchannel.Channel, clientNum, workerNum int) {
 		sc := client.GetSubChannel(benchService)
 		for reqsLeft.Single() {
 			call(sc)
 		}
 	}
-	clientRunner := func(client *Channel, clientNum int) {
+	clientRunner := func(client *tchannel.Channel, clientNum int) {
 		testutils.RunN(c.workersPerClient, func(i int) {
 			clientWorker(client, clientNum, i)
 		})
@@ -195,3 +196,4 @@ func BenchmarkCallsConcurrentClient(b *testing.B) {
 		workersPerClient: parallelism,
 	})
 }
+*/

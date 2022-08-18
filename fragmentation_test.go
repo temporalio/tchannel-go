@@ -27,7 +27,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/uber/tchannel-go/typed"
+	"github.com/temporalio/tchannel-go/typed"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

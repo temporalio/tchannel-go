@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/uber/tchannel-go/typed"
+	"github.com/temporalio/tchannel-go/typed"
 
 	"github.com/stretchr/testify/assert"
 )

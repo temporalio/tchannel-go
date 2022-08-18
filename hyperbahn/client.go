@@ -27,10 +27,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/uber/tchannel-go"
-	htypes "github.com/uber/tchannel-go/hyperbahn/gen-go/hyperbahn"
-	tjson "github.com/uber/tchannel-go/json"
-	tthrift "github.com/uber/tchannel-go/thrift"
+	"github.com/temporalio/tchannel-go"
+	htypes "github.com/temporalio/tchannel-go/hyperbahn/gen-go/hyperbahn"
+	tjson "github.com/temporalio/tchannel-go/json"
+	tthrift "github.com/temporalio/tchannel-go/thrift"
 )
 
 // Client manages Hyperbahn connections and registrations.

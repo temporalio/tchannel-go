@@ -25,8 +25,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/uber/tchannel-go/testutils"
-	"github.com/uber/tchannel-go/typed"
+	"github.com/temporalio/tchannel-go/testutils"
+	"github.com/temporalio/tchannel-go/typed"
 )
 
 func TestHeaders(t *testing.T) {

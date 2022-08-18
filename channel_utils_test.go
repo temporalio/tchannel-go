@@ -23,13 +23,13 @@ package tchannel_test
 import (
 	"testing"
 
-	. "github.com/uber/tchannel-go"
+	"github.com/temporalio/tchannel-go"
 
-	"github.com/uber/tchannel-go/testutils"
+	"github.com/temporalio/tchannel-go/testutils"
 )
 
 // NewServer creates a new server and returns the channel, service name, and host port.
-func NewServer(t testing.TB, opts *testutils.ChannelOpts) (*Channel, string, string) {
+func NewServer(t testing.TB, opts *testutils.ChannelOpts) (*tchannel.Channel, string, string) {
 	ch := testutils.NewServer(t, opts)
 	peerInfo := ch.PeerInfo()
 	return ch, peerInfo.ServiceName, peerInfo.HostPort

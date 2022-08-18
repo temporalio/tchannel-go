@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/uber/tchannel-go/testutils/thriftarg2test"
+	"github.com/temporalio/tchannel-go/testutils/thriftarg2test"
 )
 
 func TestKeyValIterator(t *testing.T) {

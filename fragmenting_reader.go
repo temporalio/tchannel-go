@@ -25,7 +25,7 @@ import (
 	"errors"
 	"io"
 
-	"github.com/uber/tchannel-go/typed"
+	"github.com/temporalio/tchannel-go/typed"
 )
 
 var (

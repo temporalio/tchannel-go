@@ -26,7 +26,7 @@ import (
 	"io"
 	"io/ioutil"
 
-	"github.com/uber/tchannel-go/internal/argreader"
+	"github.com/temporalio/tchannel-go/internal/argreader"
 )
 
 // ArgReader is the interface for the arg2 and arg3 streams on an

@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/uber-go/tally"
-	"github.com/uber/tchannel-go/testutils"
+	"github.com/temporalio/tchannel-go/testutils"
 )
 
 func TestConvertTags(t *testing.T) {

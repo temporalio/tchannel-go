@@ -25,7 +25,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/uber/tchannel-go"
+	"github.com/temporalio/tchannel-go"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

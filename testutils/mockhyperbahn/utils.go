@@ -25,7 +25,7 @@ import (
 	"net"
 	"strconv"
 
-	hthrift "github.com/uber/tchannel-go/hyperbahn/gen-go/hyperbahn"
+	hthrift "github.com/temporalio/tchannel-go/hyperbahn/gen-go/hyperbahn"
 )
 
 func toServicePeer(hostPort string) (*hthrift.ServicePeer, error) {

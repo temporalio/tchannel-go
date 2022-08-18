@@ -25,8 +25,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/uber/tchannel-go"
-	"github.com/uber/tchannel-go/crossdock/log"
+	"github.com/temporalio/tchannel-go"
+	"github.com/temporalio/tchannel-go/crossdock/log"
 
 	"github.com/crossdock/crossdock-go"
 	"github.com/opentracing/opentracing-go"

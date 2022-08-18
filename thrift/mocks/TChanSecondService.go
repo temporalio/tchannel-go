@@ -22,7 +22,7 @@ package mocks
 
 import "github.com/stretchr/testify/mock"
 
-import "github.com/uber/tchannel-go/thrift"
+import "github.com/temporalio/tchannel-go/thrift"
 
 type TChanSecondService struct {
 	mock.Mock

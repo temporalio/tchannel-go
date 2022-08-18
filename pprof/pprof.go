@@ -24,8 +24,8 @@ import (
 	"net/http"
 	_ "net/http/pprof" // So pprof endpoints are registered on DefaultServeMux.
 
-	"github.com/uber/tchannel-go"
-	thttp "github.com/uber/tchannel-go/http"
+	"github.com/temporalio/tchannel-go"
+	thttp "github.com/temporalio/tchannel-go/http"
 
 	"golang.org/x/net/context"
 )

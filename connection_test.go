@@ -32,13 +32,13 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/uber/tchannel-go"
-	"github.com/uber/tchannel-go/raw"
-	"github.com/uber/tchannel-go/relay/relaytest"
-	"github.com/uber/tchannel-go/testutils"
-	"github.com/uber/tchannel-go/testutils/testreader"
-	"github.com/uber/tchannel-go/tos"
-	"github.com/uber/tchannel-go/typed"
+	"github.com/temporalio/tchannel-go"
+	"github.com/temporalio/tchannel-go/raw"
+	"github.com/temporalio/tchannel-go/relay/relaytest"
+	"github.com/temporalio/tchannel-go/testutils"
+	"github.com/temporalio/tchannel-go/testutils/testreader"
+	"github.com/temporalio/tchannel-go/tos"
+	"github.com/temporalio/tchannel-go/typed"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -62,7 +62,7 @@ type testHandler struct {
 	sync.Mutex
 
 	t        testing.TB
-	format   Format
+	format   tchannel.Format
 	caller   string
 	blockErr chan error
 }
@@ -77,7 +77,7 @@ func (h *testHandler) Handle(ctx context.Context, args *raw.Args) (*raw.Res, err
 	h.caller = args.Caller
 	h.Unlock()
 
-	assert.Equal(h.t, args.Caller, CurrentCall(ctx).CallerName())
+	assert.Equal(h.t, args.Caller, tchannel.CurrentCall(ctx).CallerName())
 
 	switch args.Method {
 	case "block":
@@ -93,7 +93,7 @@ func (h *testHandler) Handle(ctx context.Context, args *raw.Args) (*raw.Res, err
 		}, nil
 	case "busy":
 		return &raw.Res{
-			SystemErr: ErrServerBusy,
+			SystemErr: tchannel.ErrServerBusy,
 		}, nil
 	case "app-error":
 		return &raw.Res{
@@ -109,7 +109,7 @@ func (h *testHandler) OnError(ctx context.Context, err error) {
 	h.t.Errorf("testHandler got error: %v stack:\n%s", err, stack)
 }
 
-func writeFlushStr(w ArgWriter, d string) error {
+func writeFlushStr(w tchannel.ArgWriter, d string) error {
 	if _, err := io.WriteString(w, d); err != nil {
 		return err
 	}
@@ -130,12 +130,12 @@ func isTosPriority(c net.Conn, tosPriority tos.ToS) (bool, error) {
 	return connTosPriority == int(tosPriority), err
 }
 
-func getErrorFrame(t testing.TB) *Frame {
-	var errFrame *Frame
+func getErrorFrame(t testing.TB) *tchannel.Frame {
+	var errFrame *tchannel.Frame
 	server := testutils.NewServer(t, testutils.NewOpts().DisableLogVerification())
 	defer server.Close()
 
-	frameRelay, cancel := testutils.FrameRelay(t, server.PeerInfo().HostPort, func(outgoing bool, f *Frame) *Frame {
+	frameRelay, cancel := testutils.FrameRelay(t, server.PeerInfo().HostPort, func(outgoing bool, f *tchannel.Frame) *tchannel.Frame {
 		if strings.Contains(f.Header.String(), "Error") {
 			errFrame = f
 		}
@@ -153,28 +153,28 @@ func TestRoundTrip(t *testing.T) {
 		handler := newTestHandler(t)
 		ts.Register(raw.Wrap(handler), "echo")
 
-		ctx, cancel := NewContext(time.Second)
+		ctx, cancel := tchannel.NewContext(time.Second)
 		defer cancel()
 
-		call, err := ts.Server().BeginCall(ctx, ts.HostPort(), ts.ServiceName(), "echo", &CallOptions{Format: JSON})
+		call, err := ts.Server().BeginCall(ctx, ts.HostPort(), ts.ServiceName(), "echo", &tchannel.CallOptions{Format: tchannel.JSON})
 		require.NoError(t, err)
 		assert.NotEmpty(t, call.RemotePeer().HostPort)
 		assert.Equal(t, ts.Server().PeerInfo(), call.LocalPeer(), "Unexpected local peer")
 
-		require.NoError(t, NewArgWriter(call.Arg2Writer()).Write(testArg2))
-		require.NoError(t, NewArgWriter(call.Arg3Writer()).Write(testArg3))
+		require.NoError(t, tchannel.NewArgWriter(call.Arg2Writer()).Write(testArg2))
+		require.NoError(t, tchannel.NewArgWriter(call.Arg3Writer()).Write(testArg3))
 
 		var respArg2 []byte
-		require.NoError(t, NewArgReader(call.Response().Arg2Reader()).Read(&respArg2))
+		require.NoError(t, tchannel.NewArgReader(call.Response().Arg2Reader()).Read(&respArg2))
 		assert.Equal(t, testArg2, []byte(respArg2))
 
 		var respArg3 []byte
-		require.NoError(t, NewArgReader(call.Response().Arg3Reader()).Read(&respArg3))
+		require.NoError(t, tchannel.NewArgReader(call.Response().Arg3Reader()).Read(&respArg3))
 		assert.Equal(t, testArg3, []byte(respArg3))
 
-		assert.Equal(t, JSON, handler.format)
+		assert.Equal(t, tchannel.JSON, handler.format)
 		assert.Equal(t, ts.ServiceName(), handler.caller)
-		assert.Equal(t, JSON, call.Response().Format(), "response Format should match request Format")
+		assert.Equal(t, tchannel.JSON, call.Response().Format(), "response Format should match request Format")
 	})
 }
 
@@ -183,7 +183,7 @@ func TestDefaultFormat(t *testing.T) {
 		handler := newTestHandler(t)
 		ts.Register(raw.Wrap(handler), "echo")
 
-		ctx, cancel := NewContext(time.Second)
+		ctx, cancel := tchannel.NewContext(time.Second)
 		defer cancel()
 
 		arg2, arg3, resp, err := raw.Call(ctx, ts.Server(), ts.HostPort(), ts.ServiceName(), "echo", testArg2, testArg3)
@@ -191,27 +191,27 @@ func TestDefaultFormat(t *testing.T) {
 
 		require.Equal(t, testArg2, arg2)
 		require.Equal(t, testArg3, arg3)
-		require.Equal(t, Raw, handler.format)
-		assert.Equal(t, Raw, resp.Format(), "response Format should match request Format")
+		require.Equal(t, tchannel.Raw, handler.format)
+		assert.Equal(t, tchannel.Raw, resp.Format(), "response Format should match request Format")
 	})
 }
 
 func TestRemotePeer(t *testing.T) {
-	wantVersion := PeerVersion{
+	wantVersion := tchannel.PeerVersion{
 		Language:        "go",
 		LanguageVersion: strings.TrimPrefix(runtime.Version(), "go"),
-		TChannelVersion: VersionInfo,
+		TChannelVersion: tchannel.VersionInfo,
 	}
 	tests := []struct {
 		name       string
-		remote     func(testing.TB, *testutils.TestServer) *Channel
-		expectedFn func(*RuntimeState, *testutils.TestServer) PeerInfo
+		remote     func(testing.TB, *testutils.TestServer) *tchannel.Channel
+		expectedFn func(*tchannel.RuntimeState, *testutils.TestServer) tchannel.PeerInfo
 	}{
 		{
 			name:   "ephemeral client",
-			remote: func(t testing.TB, ts *testutils.TestServer) *Channel { return ts.NewClient(nil) },
-			expectedFn: func(state *RuntimeState, ts *testutils.TestServer) PeerInfo {
-				return PeerInfo{
+			remote: func(t testing.TB, ts *testutils.TestServer) *tchannel.Channel { return ts.NewClient(nil) },
+			expectedFn: func(state *tchannel.RuntimeState, ts *testutils.TestServer) tchannel.PeerInfo {
+				return tchannel.PeerInfo{
 					HostPort:    state.RootPeers[ts.HostPort()].OutboundConnections[0].LocalHostPort,
 					IsEphemeral: true,
 					ProcessName: state.LocalPeer.ProcessName,
@@ -221,9 +221,9 @@ func TestRemotePeer(t *testing.T) {
 		},
 		{
 			name:   "listening server",
-			remote: func(t testing.TB, ts *testutils.TestServer) *Channel { return ts.NewServer(nil) },
-			expectedFn: func(state *RuntimeState, ts *testutils.TestServer) PeerInfo {
-				return PeerInfo{
+			remote: func(t testing.TB, ts *testutils.TestServer) *tchannel.Channel { return ts.NewServer(nil) },
+			expectedFn: func(state *tchannel.RuntimeState, ts *testutils.TestServer) tchannel.PeerInfo {
+				return tchannel.PeerInfo{
 					HostPort:    state.LocalPeer.HostPort,
 					IsEphemeral: false,
 					ProcessName: state.LocalPeer.ProcessName,
@@ -233,7 +233,7 @@ func TestRemotePeer(t *testing.T) {
 		},
 	}
 
-	ctx, cancel := NewContext(time.Second)
+	ctx, cancel := tchannel.NewContext(time.Second)
 	defer cancel()
 
 	for _, tt := range tests {
@@ -242,10 +242,10 @@ func TestRemotePeer(t *testing.T) {
 			remote := tt.remote(t, ts)
 			defer remote.Close()
 
-			gotPeer := make(chan PeerInfo, 1)
+			gotPeer := make(chan tchannel.PeerInfo, 1)
 			ts.RegisterFunc("test", func(ctx context.Context, args *raw.Args) (*raw.Res, error) {
-				gotPeer <- CurrentCall(ctx).RemotePeer()
-				assert.Equal(t, ts.Server().PeerInfo(), CurrentCall(ctx).LocalPeer())
+				gotPeer <- tchannel.CurrentCall(ctx).RemotePeer()
+				assert.Equal(t, ts.Server().PeerInfo(), tchannel.CurrentCall(ctx).LocalPeer())
 				return &raw.Res{}, nil
 			})
 
@@ -258,7 +258,7 @@ func TestRemotePeer(t *testing.T) {
 }
 
 func TestReuseConnection(t *testing.T) {
-	ctx, cancel := NewContext(time.Second)
+	ctx, cancel := tchannel.NewContext(time.Second)
 	defer cancel()
 
 	// Since we're specifically testing that connections between hosts are re-used,
@@ -275,12 +275,12 @@ func TestReuseConnection(t *testing.T) {
 
 		outbound, err := ts.Server().BeginCall(ctx, hostPort2, "s2", "echo", nil)
 		require.NoError(t, err)
-		outboundConn, outboundNetConn := OutboundConnection(outbound)
+		outboundConn, outboundNetConn := tchannel.OutboundConnection(outbound)
 
 		// Try to make another call at the same time, should reuse the same connection.
 		outbound2, err := ts.Server().BeginCall(ctx, hostPort2, "s2", "echo", nil)
 		require.NoError(t, err)
-		outbound2Conn, _ := OutboundConnection(outbound)
+		outbound2Conn, _ := tchannel.OutboundConnection(outbound)
 		assert.Equal(t, outboundConn, outbound2Conn)
 
 		// Wait for the connection to be marked as active in ch2.
@@ -293,15 +293,15 @@ func TestReuseConnection(t *testing.T) {
 		// test server -> ch2 call wasn't relayed.
 		outbound3, err := ch2.BeginCall(ctx, ts.HostPort(), "s1", "echo", nil)
 		require.NoError(t, err)
-		_, outbound3NetConn := OutboundConnection(outbound3)
+		_, outbound3NetConn := tchannel.OutboundConnection(outbound3)
 		assert.Equal(t, outboundNetConn.RemoteAddr(), outbound3NetConn.LocalAddr())
 		assert.Equal(t, outboundNetConn.LocalAddr(), outbound3NetConn.RemoteAddr())
 
 		// Ensure all calls can complete in parallel.
 		var wg sync.WaitGroup
-		for _, call := range []*OutboundCall{outbound, outbound2, outbound3} {
+		for _, call := range []*tchannel.OutboundCall{outbound, outbound2, outbound3} {
 			wg.Add(1)
-			go func(call *OutboundCall) {
+			go func(call *tchannel.OutboundCall) {
 				defer wg.Done()
 				resp1, resp2, _, err := raw.WriteArgs(call, []byte("arg2"), []byte("arg3"))
 				require.NoError(t, err)
@@ -315,12 +315,12 @@ func TestReuseConnection(t *testing.T) {
 
 func TestPing(t *testing.T) {
 	testutils.WithTestServer(t, nil, func(t testing.TB, ts *testutils.TestServer) {
-		ctx, cancel := NewContext(time.Second)
+		ctx, cancel := tchannel.NewContext(time.Second)
 		defer cancel()
 
 		errFrame := getErrorFrame(t)
 		var returnErr bool
-		frameRelay, close := testutils.FrameRelay(t, ts.HostPort(), func(outgoing bool, f *Frame) *Frame {
+		frameRelay, close := testutils.FrameRelay(t, ts.HostPort(), func(outgoing bool, f *tchannel.Frame) *tchannel.Frame {
 			if !outgoing && returnErr {
 				errFrame.Header.ID = f.Header.ID
 				f = errFrame
@@ -349,12 +349,12 @@ func TestBadRequest(t *testing.T) {
 	// ch will log an error when it receives a request for an unknown handler.
 	opts := testutils.NewOpts().AddLogFilter("Couldn't find handler.", 1)
 	testutils.WithTestServer(t, opts, func(t testing.TB, ts *testutils.TestServer) {
-		ctx, cancel := NewContext(time.Second)
+		ctx, cancel := tchannel.NewContext(time.Second)
 		defer cancel()
 
 		_, _, _, err := raw.Call(ctx, ts.Server(), ts.HostPort(), ts.ServiceName(), "Noone", []byte("Headers"), []byte("Body"))
 		require.NotNil(t, err)
-		assert.Equal(t, ErrCodeBadRequest, GetSystemErrorCode(err))
+		assert.Equal(t, tchannel.ErrCodeBadRequest, tchannel.GetSystemErrorCode(err))
 
 		calls := relaytest.NewMockStats()
 		calls.Add(ts.ServiceName(), ts.ServiceName(), "Noone").Failed("bad-request").End()
@@ -368,7 +368,7 @@ func TestNoTimeout(t *testing.T) {
 
 		ctx := context.Background()
 		_, _, _, err := raw.Call(ctx, ts.Server(), ts.HostPort(), "svc", "Echo", []byte("Headers"), []byte("Body"))
-		assert.Equal(t, ErrTimeoutRequired, err)
+		assert.Equal(t, tchannel.ErrTimeoutRequired, err)
 
 		ts.AssertRelayStats(relaytest.NewMockStats())
 	})
@@ -377,7 +377,7 @@ func TestNoTimeout(t *testing.T) {
 func TestCancelled(t *testing.T) {
 	testutils.WithTestServer(t, nil, func(t testing.TB, ts *testutils.TestServer) {
 		ts.Register(raw.Wrap(newTestHandler(t)), "echo")
-		ctx, cancel := NewContext(time.Second)
+		ctx, cancel := tchannel.NewContext(time.Second)
 
 		// Make a call first to make sure we have a connection.
 		// We want to test the BeginCall path.
@@ -387,17 +387,17 @@ func TestCancelled(t *testing.T) {
 		// Now cancel the context.
 		cancel()
 		_, _, _, err = raw.Call(ctx, ts.Server(), ts.HostPort(), ts.ServiceName(), "echo", []byte("Headers"), []byte("Body"))
-		assert.Equal(t, ErrRequestCancelled, err, "Unexpected error when making call with canceled context")
+		assert.Equal(t, tchannel.ErrRequestCancelled, err, "Unexpected error when making call with canceled context")
 	})
 }
 
 func TestNoServiceNaming(t *testing.T) {
 	testutils.WithTestServer(t, nil, func(t testing.TB, ts *testutils.TestServer) {
-		ctx, cancel := NewContext(time.Second)
+		ctx, cancel := tchannel.NewContext(time.Second)
 		defer cancel()
 
 		_, _, _, err := raw.Call(ctx, ts.Server(), ts.HostPort(), "", "Echo", []byte("Headers"), []byte("Body"))
-		assert.Equal(t, ErrNoServiceName, err)
+		assert.Equal(t, tchannel.ErrNoServiceName, err)
 
 		ts.AssertRelayStats(relaytest.NewMockStats())
 	})
@@ -405,19 +405,19 @@ func TestNoServiceNaming(t *testing.T) {
 
 func TestServerBusy(t *testing.T) {
 	testutils.WithTestServer(t, nil, func(t testing.TB, ts *testutils.TestServer) {
-		ts.Register(ErrorHandlerFunc(func(ctx context.Context, call *InboundCall) error {
+		ts.Register(tchannel.ErrorHandlerFunc(func(ctx context.Context, call *tchannel.InboundCall) error {
 			if _, err := raw.ReadArgs(call); err != nil {
 				return err
 			}
-			return ErrServerBusy
+			return tchannel.ErrServerBusy
 		}), "busy")
 
-		ctx, cancel := NewContext(time.Second)
+		ctx, cancel := tchannel.NewContext(time.Second)
 		defer cancel()
 
 		_, _, _, err := raw.Call(ctx, ts.Server(), ts.HostPort(), ts.ServiceName(), "busy", []byte("Arg2"), []byte("Arg3"))
 		require.NotNil(t, err)
-		assert.Equal(t, ErrCodeBusy, GetSystemErrorCode(err), "err: %v", err)
+		assert.Equal(t, tchannel.ErrCodeBusy, tchannel.GetSystemErrorCode(err), "err: %v", err)
 
 		calls := relaytest.NewMockStats()
 		calls.Add(ts.ServiceName(), ts.ServiceName(), "busy").Failed("busy").End()
@@ -430,19 +430,19 @@ func TestUnexpectedHandlerError(t *testing.T) {
 		AddLogFilter("Unexpected handler error", 1)
 
 	testutils.WithTestServer(t, opts, func(t testing.TB, ts *testutils.TestServer) {
-		ts.Register(ErrorHandlerFunc(func(ctx context.Context, call *InboundCall) error {
+		ts.Register(tchannel.ErrorHandlerFunc(func(ctx context.Context, call *tchannel.InboundCall) error {
 			if _, err := raw.ReadArgs(call); err != nil {
 				return err
 			}
 			return fmt.Errorf("nope")
 		}), "nope")
 
-		ctx, cancel := NewContext(time.Second)
+		ctx, cancel := tchannel.NewContext(time.Second)
 		defer cancel()
 
 		_, _, _, err := raw.Call(ctx, ts.Server(), ts.HostPort(), ts.ServiceName(), "nope", []byte("Arg2"), []byte("Arg3"))
 		require.NotNil(t, err)
-		assert.Equal(t, ErrCodeUnexpected, GetSystemErrorCode(err), "err: %v", err)
+		assert.Equal(t, tchannel.ErrCodeUnexpected, tchannel.GetSystemErrorCode(err), "err: %v", err)
 
 		calls := relaytest.NewMockStats()
 		calls.Add(ts.ServiceName(), ts.ServiceName(), "nope").Failed("unexpected-error").End()
@@ -463,17 +463,17 @@ func TestTimeout(t *testing.T) {
 	testutils.WithTestServer(t, nil, func(t testing.TB, ts *testutils.TestServer) {
 		// onError may be called when the block call tries to write the call response.
 		onError := func(ctx context.Context, err error) {
-			assert.Equal(t, ErrTimeout, err, "onError err should be ErrTimeout")
+			assert.Equal(t, tchannel.ErrTimeout, err, "onError err should be ErrTimeout")
 			assert.Equal(t, context.DeadlineExceeded, ctx.Err(), "Context should timeout")
 		}
 		testHandler := onErrorTestHandler{newTestHandler(t), onError}
 		ts.Register(raw.Wrap(testHandler), "block")
 
-		ctx, cancel := NewContext(testutils.Timeout(15 * time.Millisecond))
+		ctx, cancel := tchannel.NewContext(testutils.Timeout(15 * time.Millisecond))
 		defer cancel()
 
 		_, _, _, err := raw.Call(ctx, ts.Server(), ts.HostPort(), ts.ServiceName(), "block", []byte("Arg2"), []byte("Arg3"))
-		assert.Equal(t, ErrTimeout, err)
+		assert.Equal(t, tchannel.ErrTimeout, err)
 
 		// Verify the server-side receives an error from the context.
 		select {
@@ -491,12 +491,12 @@ func TestTimeout(t *testing.T) {
 
 func TestLargeMethod(t *testing.T) {
 	testutils.WithTestServer(t, nil, func(t testing.TB, ts *testutils.TestServer) {
-		ctx, cancel := NewContext(time.Second)
+		ctx, cancel := tchannel.NewContext(time.Second)
 		defer cancel()
 
 		largeMethod := testutils.RandBytes(16*1024 + 1)
 		_, _, _, err := raw.Call(ctx, ts.Server(), ts.HostPort(), ts.ServiceName(), string(largeMethod), nil, nil)
-		assert.Equal(t, ErrMethodTooLarge, err)
+		assert.Equal(t, tchannel.ErrMethodTooLarge, err)
 	})
 }
 
@@ -504,7 +504,7 @@ func TestLargeTimeout(t *testing.T) {
 	testutils.WithTestServer(t, nil, func(t testing.TB, ts *testutils.TestServer) {
 		ts.Register(raw.Wrap(newTestHandler(t)), "echo")
 
-		ctx, cancel := NewContext(1000 * time.Second)
+		ctx, cancel := tchannel.NewContext(1000 * time.Second)
 		defer cancel()
 
 		_, _, _, err := raw.Call(ctx, ts.Server(), ts.HostPort(), ts.ServiceName(), "echo", testArg2, testArg3)
@@ -520,17 +520,17 @@ func TestFragmentation(t *testing.T) {
 	testutils.WithTestServer(t, nil, func(t testing.TB, ts *testutils.TestServer) {
 		ts.Register(raw.Wrap(newTestHandler(t)), "echo")
 
-		arg2 := make([]byte, MaxFramePayloadSize*2)
+		arg2 := make([]byte, tchannel.MaxFramePayloadSize*2)
 		for i := 0; i < len(arg2); i++ {
 			arg2[i] = byte('a' + (i % 10))
 		}
 
-		arg3 := make([]byte, MaxFramePayloadSize*3)
+		arg3 := make([]byte, tchannel.MaxFramePayloadSize*3)
 		for i := 0; i < len(arg3); i++ {
 			arg3[i] = byte('A' + (i % 10))
 		}
 
-		ctx, cancel := NewContext(time.Second)
+		ctx, cancel := tchannel.NewContext(time.Second)
 		defer cancel()
 
 		respArg2, respArg3, _, err := raw.Call(ctx, ts.Server(), ts.HostPort(), ts.ServiceName(), "echo", arg2, arg3)
@@ -552,7 +552,7 @@ func TestFragmentationSlowReader(t *testing.T) {
 
 	testutils.WithTestServer(t, opts, func(t testing.TB, ts *testutils.TestServer) {
 		startReading, handlerComplete := make(chan struct{}), make(chan struct{})
-		handler := func(ctx context.Context, call *InboundCall) {
+		handler := func(ctx context.Context, call *tchannel.InboundCall) {
 			<-startReading
 			<-ctx.Done()
 			_, err := raw.ReadArgs(call)
@@ -560,12 +560,12 @@ func TestFragmentationSlowReader(t *testing.T) {
 			close(handlerComplete)
 		}
 
-		ts.Register(HandlerFunc(handler), "echo")
+		ts.Register(tchannel.HandlerFunc(handler), "echo")
 
-		arg2 := testutils.RandBytes(MaxFramePayloadSize * MexChannelBufferSize)
-		arg3 := testutils.RandBytes(MaxFramePayloadSize * (MexChannelBufferSize + 1))
+		arg2 := testutils.RandBytes(tchannel.MaxFramePayloadSize * tchannel.MexChannelBufferSize)
+		arg3 := testutils.RandBytes(tchannel.MaxFramePayloadSize * (tchannel.MexChannelBufferSize + 1))
 
-		ctx, cancel := NewContext(testutils.Timeout(30 * time.Millisecond))
+		ctx, cancel := tchannel.NewContext(testutils.Timeout(30 * time.Millisecond))
 		defer cancel()
 
 		_, _, _, err := raw.Call(ctx, ts.Server(), ts.HostPort(), ts.ServiceName(), "echo", arg2, arg3)
@@ -590,30 +590,30 @@ func TestWriteArg3AfterTimeout(t *testing.T) {
 	testutils.WithTestServer(t, opts, func(t testing.TB, ts *testutils.TestServer) {
 		timedOut := make(chan struct{})
 
-		handler := func(ctx context.Context, call *InboundCall) {
+		handler := func(ctx context.Context, call *tchannel.InboundCall) {
 			_, err := raw.ReadArgs(call)
 			assert.NoError(t, err, "Read args failed")
 			response := call.Response()
-			assert.NoError(t, NewArgWriter(response.Arg2Writer()).Write(nil), "Write Arg2 failed")
+			assert.NoError(t, tchannel.NewArgWriter(response.Arg2Writer()).Write(nil), "Write Arg2 failed")
 			writer, err := response.Arg3Writer()
 			assert.NoError(t, err, "Arg3Writer failed")
 
 			for {
 				if _, err := writer.Write(testutils.RandBytes(4)); err != nil {
-					assert.Equal(t, err, ErrTimeout, "Handler should timeout")
+					assert.Equal(t, err, tchannel.ErrTimeout, "Handler should timeout")
 					close(timedOut)
 					return
 				}
 				runtime.Gosched()
 			}
 		}
-		ts.Register(HandlerFunc(handler), "call")
+		ts.Register(tchannel.HandlerFunc(handler), "call")
 
-		ctx, cancel := NewContext(testutils.Timeout(100 * time.Millisecond))
+		ctx, cancel := tchannel.NewContext(testutils.Timeout(100 * time.Millisecond))
 		defer cancel()
 
 		_, _, _, err := raw.Call(ctx, ts.Server(), ts.HostPort(), ts.ServiceName(), "call", nil, nil)
-		assert.Equal(t, err, ErrTimeout, "Call should timeout")
+		assert.Equal(t, err, tchannel.ErrTimeout, "Call should timeout")
 
 		// Wait for the write to complete, make sure there are no errors.
 		select {
@@ -659,7 +659,7 @@ func TestLargeSendSystemError(t *testing.T) {
 				conn, err := client.Connect(ctx, ts.HostPort())
 				require.NoError(t, err, "Connect failed")
 
-				err = conn.SendSystemError(1, Span{}, tt.err)
+				err = conn.SendSystemError(1, tchannel.Span{}, tt.err)
 				require.Error(t, err, "Expect err")
 				assert.Contains(t, err.Error(), tt.wantErr, "unexpected error")
 			})
@@ -672,21 +672,21 @@ func TestWriteErrorAfterTimeout(t *testing.T) {
 	testutils.WithTestServer(t, nil, func(t testing.TB, ts *testutils.TestServer) {
 		timedOut := make(chan struct{})
 		done := make(chan struct{})
-		handler := func(ctx context.Context, call *InboundCall) {
+		handler := func(ctx context.Context, call *tchannel.InboundCall) {
 			<-ctx.Done()
 			<-timedOut
 			_, err := raw.ReadArgs(call)
-			assert.Equal(t, ErrTimeout, err, "Read args should fail with timeout")
+			assert.Equal(t, tchannel.ErrTimeout, err, "Read args should fail with timeout")
 			response := call.Response()
-			assert.Equal(t, ErrTimeout, response.SendSystemError(ErrServerBusy), "SendSystemError should fail")
+			assert.Equal(t, tchannel.ErrTimeout, response.SendSystemError(tchannel.ErrServerBusy), "SendSystemError should fail")
 			close(done)
 		}
-		ts.Register(HandlerFunc(handler), "call")
+		ts.Register(tchannel.HandlerFunc(handler), "call")
 
-		ctx, cancel := NewContext(testutils.Timeout(30 * time.Millisecond))
+		ctx, cancel := tchannel.NewContext(testutils.Timeout(30 * time.Millisecond))
 		defer cancel()
 		_, _, _, err := raw.Call(ctx, ts.Server(), ts.HostPort(), ts.ServiceName(), "call", nil, testutils.RandBytes(100000))
-		assert.Equal(t, err, ErrTimeout, "Call should timeout")
+		assert.Equal(t, err, tchannel.ErrTimeout, "Call should timeout")
 		close(timedOut)
 
 		select {
@@ -702,7 +702,7 @@ func TestWriteErrorAfterTimeout(t *testing.T) {
 }
 
 func TestWriteAfterConnectionError(t *testing.T) {
-	ctx, cancel := NewContext(time.Second)
+	ctx, cancel := tchannel.NewContext(time.Second)
 	defer cancel()
 
 	// Closing network connections can lead to warnings in many places.
@@ -721,7 +721,7 @@ func TestWriteAfterConnectionError(t *testing.T) {
 		require.NoError(t, writeFlushStr(w, "initial"), "write initial failed")
 
 		// Now close the underlying network connection, writes should fail.
-		_, conn := OutboundConnection(call)
+		_, conn := tchannel.OutboundConnection(call)
 		conn.Close()
 
 		// Writes should start failing pretty soon.
@@ -733,7 +733,7 @@ func TestWriteAfterConnectionError(t *testing.T) {
 			time.Sleep(time.Millisecond)
 		}
 		if assert.Error(t, writeErr, "Writes should fail after a connection is closed") {
-			assert.Equal(t, ErrCodeNetwork, GetSystemErrorCode(writeErr), "write should fail due to network error")
+			assert.Equal(t, tchannel.ErrCodeNetwork, tchannel.GetSystemErrorCode(writeErr), "write should fail due to network error")
 		}
 	})
 }
@@ -753,15 +753,15 @@ func TestReadTimeout(t *testing.T) {
 		calls := relaytest.NewMockStats()
 
 		for i := 0; i < 10; i++ {
-			ctx, cancel := NewContext(time.Second)
+			ctx, cancel := tchannel.NewContext(time.Second)
 			handler := func(ctx context.Context, args *raw.Args) (*raw.Res, error) {
 				defer cancel()
-				return nil, ErrRequestCancelled
+				return nil, tchannel.ErrRequestCancelled
 			}
 			ts.RegisterFunc("call", handler)
 
 			_, _, _, err := raw.Call(ctx, ts.Server(), ts.HostPort(), ts.ServiceName(), "call", nil, nil)
-			assert.Equal(t, err, ErrRequestCancelled, "Call should fail due to cancel")
+			assert.Equal(t, err, tchannel.ErrRequestCancelled, "Call should fail due to cancel")
 			calls.Add(sn, sn, "call").Failed("cancelled").End()
 		}
 
@@ -772,7 +772,7 @@ func TestReadTimeout(t *testing.T) {
 func TestWriteTimeout(t *testing.T) {
 	testutils.WithTestServer(t, nil, func(t testing.TB, ts *testutils.TestServer) {
 		ch := ts.Server()
-		ctx, cancel := NewContext(testutils.Timeout(15 * time.Millisecond))
+		ctx, cancel := tchannel.NewContext(testutils.Timeout(15 * time.Millisecond))
 		defer cancel()
 
 		call, err := ch.BeginCall(ctx, ts.HostPort(), ch.ServiceName(), "call", nil)
@@ -786,7 +786,7 @@ func TestWriteTimeout(t *testing.T) {
 		<-ctx.Done()
 
 		_, err = io.Copy(writer, testreader.Looper([]byte{1}))
-		assert.Equal(t, ErrTimeout, err, "Write should fail with timeout")
+		assert.Equal(t, tchannel.ErrTimeout, err, "Write should fail with timeout")
 
 		ts.AssertRelayStats(relaytest.NewMockStats())
 	})
@@ -798,7 +798,7 @@ func TestGracefulClose(t *testing.T) {
 		hp2 := ch2.PeerInfo().HostPort
 		defer ch2.Close()
 
-		ctx, cancel := NewContext(time.Second)
+		ctx, cancel := tchannel.NewContext(time.Second)
 		defer cancel()
 
 		assert.NoError(t, ts.Server().Ping(ctx, hp2), "Ping from ch1 -> ch2 failed")
@@ -819,7 +819,7 @@ func TestNetDialTimeout(t *testing.T) {
 	defer client.Close()
 
 	started := time.Now()
-	ctx, cancel := NewContext(timeoutPeriod)
+	ctx, cancel := tchannel.NewContext(timeoutPeriod)
 	defer cancel()
 
 	err := client.Ping(ctx, timeoutHostPort)
@@ -832,7 +832,7 @@ func TestNetDialTimeout(t *testing.T) {
 	}
 
 	d := time.Since(started)
-	assert.Equal(t, ErrTimeout, err, "Ping expected to fail with timeout")
+	assert.Equal(t, tchannel.ErrTimeout, err, "Ping expected to fail with timeout")
 	assert.True(t, d >= timeoutPeriod, "Timeout should take more than %v, took %v", timeoutPeriod, d)
 }
 
@@ -842,7 +842,7 @@ func TestConnectTimeout(t *testing.T) {
 		// Set up a relay that will delay the initial init req.
 		testComplete := make(chan struct{})
 
-		relayFunc := func(outgoing bool, f *Frame) *Frame {
+		relayFunc := func(outgoing bool, f *tchannel.Frame) *tchannel.Frame {
 			select {
 			case <-time.After(testutils.Timeout(200 * time.Millisecond)):
 				return f
@@ -862,14 +862,14 @@ func TestConnectTimeout(t *testing.T) {
 
 		// Make a call with a long timeout, but short connect timeout.
 		// We expect the call to fall almost immediately with ErrTimeout.
-		ctx, cancel := NewContextBuilder(2 * time.Second).
+		ctx, cancel := tchannel.NewContextBuilder(2 * time.Second).
 			SetConnectTimeout(testutils.Timeout(100 * time.Millisecond)).
 			Build()
 		defer cancel()
 
 		client := ts.NewClient(opts)
 		err := client.Ping(ctx, relay)
-		assert.Equal(t, ErrTimeout, err, "Ping should timeout due to timeout relay")
+		assert.Equal(t, tchannel.ErrTimeout, err, "Ping should timeout due to timeout relay")
 
 		// Note: we do not defer this, as we need to close(testComplete) before
 		// we call shutdown since shutdown waits for the relay to close, which
@@ -899,7 +899,7 @@ func TestParallelConnectionAccepts(t *testing.T) {
 func TestConnectionIDs(t *testing.T) {
 	testutils.WithTestServer(t, nil, func(t testing.TB, ts *testutils.TestServer) {
 		var inbound, outbound []uint32
-		relayFunc := func(outgoing bool, f *Frame) *Frame {
+		relayFunc := func(outgoing bool, f *tchannel.Frame) *tchannel.Frame {
 			if outgoing {
 				outbound = append(outbound, f.Header.ID)
 			} else {
@@ -910,7 +910,7 @@ func TestConnectionIDs(t *testing.T) {
 		relay, shutdown := testutils.FrameRelay(t, ts.HostPort(), relayFunc)
 		defer shutdown()
 
-		ctx, cancel := NewContext(time.Second)
+		ctx, cancel := tchannel.NewContext(time.Second)
 		defer cancel()
 
 		s2 := ts.NewServer(nil)
@@ -935,7 +935,7 @@ func TestConnectionIDs(t *testing.T) {
 }
 
 func TestTosPriority(t *testing.T) {
-	ctx, cancel := NewContext(time.Second)
+	ctx, cancel := tchannel.NewContext(time.Second)
 	defer cancel()
 
 	opts := testutils.NewOpts().SetServiceName("s1").SetTosPriority(tos.Lowdelay)
@@ -945,7 +945,7 @@ func TestTosPriority(t *testing.T) {
 		outbound, err := ts.Server().BeginCall(ctx, ts.HostPort(), "s1", "echo", nil)
 		require.NoError(t, err, "BeginCall failed")
 
-		_, outboundNetConn := OutboundConnection(outbound)
+		_, outboundNetConn := tchannel.OutboundConnection(outbound)
 		connTosPriority, err := isTosPriority(outboundNetConn, tos.Lowdelay)
 		require.NoError(t, err, "Checking TOS priority failed")
 		assert.Equal(t, connTosPriority, true)
@@ -961,7 +961,7 @@ func TestPeerStatusChangeClientReduction(t *testing.T) {
 		testutils.RegisterEcho(server, nil)
 		changes := make(chan int, 2)
 
-		copts := testutils.NewOpts().SetOnPeerStatusChanged(func(p *Peer) {
+		copts := testutils.NewOpts().SetOnPeerStatusChanged(func(p *tchannel.Peer) {
 			i, o := p.NumConnections()
 			assert.Equal(t, 0, i, "no inbound connections to client")
 			changes <- o
@@ -991,7 +991,7 @@ func TestPeerStatusChangeClient(t *testing.T) {
 		testutils.RegisterEcho(server, nil)
 		changes := make(chan int, 2)
 
-		copts := testutils.NewOpts().SetOnPeerStatusChanged(func(p *Peer) {
+		copts := testutils.NewOpts().SetOnPeerStatusChanged(func(p *tchannel.Peer) {
 			i, o := p.NumConnections()
 			assert.Equal(t, 0, i, "no inbound connections to client")
 			changes <- o
@@ -1027,7 +1027,7 @@ func TestPeerStatusChangeClient(t *testing.T) {
 
 func TestPeerStatusChangeServer(t *testing.T) {
 	changes := make(chan int, 10)
-	sopts := testutils.NewOpts().NoRelay().SetOnPeerStatusChanged(func(p *Peer) {
+	sopts := testutils.NewOpts().NoRelay().SetOnPeerStatusChanged(func(p *tchannel.Peer) {
 		i, o := p.NumConnections()
 		assert.Equal(t, 0, o, "no outbound connections from server")
 		changes <- i
@@ -1077,7 +1077,7 @@ func TestContextCanceledOnTCPClose(t *testing.T) {
 
 		// Set up a relay that can be used to terminate conns
 		// on both sides i.e. client and server
-		relayFunc := func(outgoing bool, f *Frame) *Frame {
+		relayFunc := func(outgoing bool, f *tchannel.Frame) *tchannel.Frame {
 			return f
 		}
 		relayHostPort, shutdown := testutils.FrameRelay(t, ts.HostPort(), relayFunc)
@@ -1086,7 +1086,7 @@ func TestContextCanceledOnTCPClose(t *testing.T) {
 		// immediately after the server receives the call. Expected
 		// behavior is for both client/server to be done with the call
 		// immediately after relay shutsdown
-		ctx, cancel := NewContext(20 * time.Second)
+		ctx, cancel := tchannel.NewContext(20 * time.Second)
 		defer cancel()
 
 		clientCh := ts.NewClient(nil)
@@ -1129,11 +1129,11 @@ func TestContextCanceledOnTCPClose(t *testing.T) {
 // getConnection returns the introspection result for the unique inbound or
 // outbound connection. An assert will be raised if there is more than one
 // connection of the given type.
-func getConnection(t testing.TB, ch *Channel, direction int) *ConnectionRuntimeState {
+func getConnection(t testing.TB, ch *tchannel.Channel, direction int) *tchannel.ConnectionRuntimeState {
 	state := ch.IntrospectState(nil)
 
 	for _, peer := range state.RootPeers {
-		var connections []ConnectionRuntimeState
+		var connections []tchannel.ConnectionRuntimeState
 		if direction == inbound {
 			connections = peer.InboundConnections
 		} else {
@@ -1240,7 +1240,7 @@ func TestLastActivityTimePings(t *testing.T) {
 	clock := testutils.NewStubClock(initialTime)
 
 	opts := testutils.NewOpts().SetTimeNow(clock.Now)
-	ctx, cancel := NewContext(testutils.Timeout(100 * time.Millisecond))
+	ctx, cancel := tchannel.NewContext(testutils.Timeout(100 * time.Millisecond))
 	defer cancel()
 
 	testutils.WithTestServer(t, opts, func(t testing.TB, ts *testutils.TestServer) {
@@ -1277,7 +1277,7 @@ func TestLastActivityTimePings(t *testing.T) {
 }
 
 func TestSendBufferSize(t *testing.T) {
-	opts := testutils.NewOpts().SetSendBufferSize(512).SetSendBufferSizeOverrides([]SendBufferSizeOverride{
+	opts := testutils.NewOpts().SetSendBufferSize(512).SetSendBufferSizeOverrides([]tchannel.SendBufferSizeOverride{
 		{"abc", 1024},
 		{"abcd", 2048}, // This should never match, since we match the list in order.
 		{"xyz", 3072},
@@ -1296,15 +1296,15 @@ func TestSendBufferSize(t *testing.T) {
 		},
 		{
 			processName:          "bcd",
-			expectSendChCapacity: DefaultConnectionBufferSize,
+			expectSendChCapacity: tchannel.DefaultConnectionBufferSize,
 		},
 		{
 			processName:          "dabc",
-			expectSendChCapacity: DefaultConnectionBufferSize,
+			expectSendChCapacity: tchannel.DefaultConnectionBufferSize,
 		},
 		{
 			processName:          "dabcd",
-			expectSendChCapacity: DefaultConnectionBufferSize,
+			expectSendChCapacity: tchannel.DefaultConnectionBufferSize,
 		},
 		{
 			processName:          "abcde",
@@ -1342,27 +1342,27 @@ func TestInvalidTransportHeaders(t *testing.T) {
 
 	tests := []struct {
 		msg         string
-		ctxFn       func(*ContextBuilder)
+		ctxFn       func(*tchannel.ContextBuilder)
 		svcOverride string
 		wantErr     string
 	}{
 		{
 			msg: "valid long fields",
-			ctxFn: func(cb *ContextBuilder) {
+			ctxFn: func(cb *tchannel.ContextBuilder) {
 				cb.SetRoutingKey(long100)
 				cb.SetShardKey(long100)
 			},
 		},
 		{
 			msg: "long routing key",
-			ctxFn: func(cb *ContextBuilder) {
+			ctxFn: func(cb *tchannel.ContextBuilder) {
 				cb.SetRoutingKey(long300)
 			},
 			wantErr: "too long",
 		},
 		{
 			msg: "long shard key",
-			ctxFn: func(cb *ContextBuilder) {
+			ctxFn: func(cb *tchannel.ContextBuilder) {
 				cb.SetShardKey(long300)
 			},
 			wantErr: "too long",
@@ -1376,7 +1376,7 @@ func TestInvalidTransportHeaders(t *testing.T) {
 
 				client := ts.NewClient(nil)
 
-				cb := NewContextBuilder(time.Second)
+				cb := tchannel.NewContextBuilder(time.Second)
 				tt.ctxFn(cb)
 				ctx, cancel := cb.Build()
 				defer cancel()
@@ -1457,7 +1457,7 @@ func TestOutboundConnContext(t *testing.T) {
 		testutils.RegisterEcho(bob, nil)
 
 		baseCtx := context.WithValue(context.Background(), "foo", "bar")
-		ctx, cancel := NewContextBuilder(time.Second).SetConnectBaseContext(baseCtx).Build()
+		ctx, cancel := tchannel.NewContextBuilder(time.Second).SetConnectBaseContext(baseCtx).Build()
 		defer cancel()
 		err := alice.Ping(ctx, bob.PeerInfo().HostPort)
 		require.NoError(t, err)

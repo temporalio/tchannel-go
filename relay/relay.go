@@ -28,7 +28,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/uber/tchannel-go/thrift/arg2"
+	"github.com/temporalio/tchannel-go/thrift/arg2"
 )
 
 // KeyVal is a key, val pair in arg2

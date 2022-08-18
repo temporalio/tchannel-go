@@ -31,12 +31,12 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/uber/tchannel-go"
+	"github.com/temporalio/tchannel-go"
 
-	"github.com/uber/tchannel-go/raw"
-	"github.com/uber/tchannel-go/testutils"
-	"github.com/uber/tchannel-go/testutils/goroutines"
-	"github.com/uber/tchannel-go/testutils/testreader"
+	"github.com/temporalio/tchannel-go/raw"
+	"github.com/temporalio/tchannel-go/testutils"
+	"github.com/temporalio/tchannel-go/testutils/goroutines"
+	"github.com/temporalio/tchannel-go/testutils/testreader"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -58,8 +58,8 @@ func (*swapper) Handle(ctx context.Context, args *raw.Args) (*raw.Res, error) {
 	}, nil
 }
 
-func doPingAndCall(t testing.TB, clientCh *Channel, hostPort string) {
-	ctx, cancel := NewContext(time.Second * 5)
+func doPingAndCall(t testing.TB, clientCh *tchannel.Channel, hostPort string) {
+	ctx, cancel := tchannel.NewContext(time.Second * 5)
 	defer cancel()
 
 	require.NoError(t, clientCh.Ping(ctx, hostPort))
@@ -82,13 +82,13 @@ func doPingAndCall(t testing.TB, clientCh *Channel, hostPort string) {
 	}
 }
 
-func doErrorCall(t testing.TB, clientCh *Channel, hostPort string) {
-	ctx, cancel := NewContext(time.Second * 5)
+func doErrorCall(t testing.TB, clientCh *tchannel.Channel, hostPort string) {
+	ctx, cancel := tchannel.NewContext(time.Second * 5)
 	defer cancel()
 
 	_, _, _, err := raw.Call(ctx, clientCh, hostPort, "swap-server", "non-existent", nil, nil)
 	assert.Error(t, err, "Call to non-existent endpoint should fail")
-	assert.Equal(t, ErrCodeBadRequest, GetSystemErrorCode(err), "Error code mismatch")
+	assert.Equal(t, tchannel.ErrCodeBadRequest, tchannel.GetSystemErrorCode(err), "Error code mismatch")
 }
 
 func TestFramesReleased(t *testing.T) {
@@ -100,7 +100,7 @@ func TestFramesReleased(t *testing.T) {
 		numGoroutines        = 10
 	)
 
-	pool := NewRecordingFramePool()
+	pool := tchannel.NewRecordingFramePool()
 	opts := testutils.NewOpts().
 		SetServiceName("swap-server").
 		SetFramePool(pool).
@@ -113,7 +113,7 @@ func TestFramesReleased(t *testing.T) {
 		clientCh := ts.NewClient(clientOpts)
 
 		// Create an active connection that can be shared by the goroutines by calling Ping.
-		ctx, cancel := NewContext(time.Second)
+		ctx, cancel := tchannel.NewContext(time.Second)
 		defer cancel()
 		require.NoError(t, clientCh.Ping(ctx, ts.HostPort()))
 
@@ -144,14 +144,14 @@ func TestFramesReleased(t *testing.T) {
 
 type dirtyFramePool struct{}
 
-func (p dirtyFramePool) Get() *Frame {
-	f := NewFrame(MaxFramePayloadSize)
+func (p dirtyFramePool) Get() *tchannel.Frame {
+	f := tchannel.NewFrame(tchannel.MaxFramePayloadSize)
 	reader := testreader.Looper([]byte{^byte(0)})
 	io.ReadFull(reader, f.Payload)
 	return f
 }
 
-func (p dirtyFramePool) Release(f *Frame) {}
+func (p dirtyFramePool) Release(f *tchannel.Frame) {}
 
 func TestDirtyFrameRequests(t *testing.T) {
 	argSizes := []int{25000, 50000, 75000}
@@ -167,7 +167,7 @@ func TestDirtyFrameRequests(t *testing.T) {
 		ts.Register(raw.Wrap(&swapper{t}), "swap")
 
 		for _, argSize := range argSizes {
-			ctx, cancel := NewContext(time.Second)
+			ctx, cancel := tchannel.NewContext(time.Second)
 			defer cancel()
 
 			arg2, arg3 := testutils.RandBytes(argSize), testutils.RandBytes(argSize)

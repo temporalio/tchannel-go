@@ -25,8 +25,8 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/uber/tchannel-go"
-	"github.com/uber/tchannel-go/testutils"
+	"github.com/temporalio/tchannel-go"
+	"github.com/temporalio/tchannel-go/testutils"
 
 	"github.com/stretchr/testify/require"
 )
@@ -43,21 +43,21 @@ import (
 // loggerPtr is a Logger implementation that uses a pointer unlike other
 // TChannel loggers.
 type loggerPtr struct {
-	Logger
+	tchannel.Logger
 }
 
-func (l *loggerPtr) WithFields(fields ...LogField) Logger {
+func (l *loggerPtr) WithFields(fields ...tchannel.LogField) tchannel.Logger {
 	return &loggerPtr{l.Logger.WithFields(fields...)}
 }
 
 func TestPeerConnectionLeaks(t *testing.T) {
 	// Disable log verification since we want to set our own logger.
 	opts := testutils.NewOpts().NoRelay().DisableLogVerification()
-	opts.Logger = &loggerPtr{NullLogger}
+	opts.Logger = &loggerPtr{tchannel.NullLogger}
 
 	connFinalized := make(chan struct{})
-	setFinalizer := func(p *Peer, hostPort string) {
-		ctx, cancel := NewContext(time.Second)
+	setFinalizer := func(p *tchannel.Peer, hostPort string) {
+		ctx, cancel := tchannel.NewContext(time.Second)
 		defer cancel()
 
 		conn, err := p.GetConnection(ctx)
@@ -70,7 +70,7 @@ func TestPeerConnectionLeaks(t *testing.T) {
 
 	testutils.WithTestServer(t, opts, func(t testing.TB, ts *testutils.TestServer) {
 		s2Opts := testutils.NewOpts().SetServiceName("s2")
-		s2Opts.Logger = NewLogger(ioutil.Discard)
+		s2Opts.Logger = tchannel.NewLogger(ioutil.Discard)
 		s2 := ts.NewServer(s2Opts)
 
 		// Set a finalizer to detect when the connection from s1 -> s2 is freed.

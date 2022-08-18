@@ -29,7 +29,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/uber/tchannel-go/relay"
+	"github.com/temporalio/tchannel-go/relay"
 )
 
 // MockCallStats is a testing spy for the CallStats interface.

@@ -31,7 +31,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/uber/tchannel-go/tnet"
+	"github.com/temporalio/tchannel-go/tnet"
 
 	"github.com/opentracing/opentracing-go"
 	"go.uber.org/atomic"

@@ -26,10 +26,10 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/uber/tchannel-go"
+	"github.com/temporalio/tchannel-go"
 
-	"github.com/uber/tchannel-go/raw"
-	"github.com/uber/tchannel-go/testutils"
+	"github.com/temporalio/tchannel-go/raw"
+	"github.com/temporalio/tchannel-go/testutils"
 
 	"github.com/stretchr/testify/require"
 )
@@ -45,7 +45,7 @@ func TestLargeRequest(t *testing.T) {
 		maxRequestSize = 1 * GB
 	)
 
-	WithVerifiedServer(t, nil, func(serverCh *Channel, hostPort string) {
+	WithVerifiedServer(t, nil, func(serverCh *tchannel.Channel, hostPort string) {
 		serverCh.Register(raw.Wrap(newTestHandler(t)), "echo")
 
 		for reqSize := 2; reqSize <= maxRequestSize; reqSize *= 2 {
@@ -54,7 +54,7 @@ func TestLargeRequest(t *testing.T) {
 			arg2 := testutils.RandBytes(reqSize / 2)
 
 			clientCh := testutils.NewClient(t, nil)
-			ctx, cancel := NewContext(time.Second * 30)
+			ctx, cancel := tchannel.NewContext(time.Second * 30)
 			rArg2, rArg3, _, err := raw.Call(ctx, clientCh, hostPort, serverCh.PeerInfo().ServiceName, "echo", arg2, arg3)
 			require.NoError(t, err, "Call failed")
 

@@ -26,8 +26,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/uber/tchannel-go"
-	"github.com/uber/tchannel-go/tos"
+	"github.com/temporalio/tchannel-go"
+	"github.com/temporalio/tchannel-go/tos"
 
 	"go.uber.org/atomic"
 	"golang.org/x/net/context"

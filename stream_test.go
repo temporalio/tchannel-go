@@ -29,9 +29,9 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/uber/tchannel-go"
+	"github.com/temporalio/tchannel-go"
 
-	"github.com/uber/tchannel-go/testutils"
+	"github.com/temporalio/tchannel-go/testutils"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -51,7 +51,7 @@ func makeRepeatedBytes(n byte) []byte {
 	return data
 }
 
-func writeFlushBytes(w ArgWriter, bs []byte) error {
+func writeFlushBytes(w tchannel.ArgWriter, bs []byte) error {
 	if _, err := w.Write(bs); err != nil {
 		return err
 	}
@@ -63,12 +63,12 @@ type streamHelper struct {
 }
 
 // startCall starts a call to echoStream and returns the arg3 reader and writer.
-func (h streamHelper) startCall(ctx context.Context, ch *Channel, hostPort, serviceName string) (ArgWriter, ArgReader) {
+func (h streamHelper) startCall(ctx context.Context, ch *tchannel.Channel, hostPort, serviceName string) (tchannel.ArgWriter, tchannel.ArgReader) {
 	call, err := ch.BeginCall(ctx, hostPort, serviceName, "echoStream", nil)
 	require.NoError(h.t, err, "BeginCall to echoStream failed")
 
 	// Write empty headers
-	require.NoError(h.t, NewArgWriter(call.Arg2Writer()).Write(nil), "Write empty headers failed")
+	require.NoError(h.t, tchannel.NewArgWriter(call.Arg2Writer()).Write(nil), "Write empty headers failed")
 
 	// Flush arg3 to force the call to start without any arg3.
 	writer, err := call.Arg3Writer()
@@ -78,7 +78,7 @@ func (h streamHelper) startCall(ctx context.Context, ch *Channel, hostPort, serv
 	// Read empty Headers
 	response := call.Response()
 	var arg2 []byte
-	require.NoError(h.t, NewArgReader(response.Arg2Reader()).Read(&arg2), "Read headers failed")
+	require.NoError(h.t, tchannel.NewArgReader(response.Arg2Reader()).Read(&arg2), "Read headers failed")
 	require.False(h.t, response.ApplicationError(), "echoStream failed due to application error")
 
 	reader, err := response.Arg3Reader()
@@ -90,8 +90,8 @@ func (h streamHelper) startCall(ctx context.Context, ch *Channel, hostPort, serv
 // streamPartialHandler returns a streaming handler that has the following contract:
 // read a byte, write N bytes where N = the byte that was read.
 // The results are be written as soon as the byte is read.
-func streamPartialHandler(t testing.TB, reportErrors bool) HandlerFunc {
-	return func(ctx context.Context, call *InboundCall) {
+func streamPartialHandler(t testing.TB, reportErrors bool) tchannel.HandlerFunc {
+	return func(ctx context.Context, call *tchannel.InboundCall) {
 		response := call.Response()
 		onError := func(err error) {
 			if reportErrors {
@@ -101,12 +101,12 @@ func streamPartialHandler(t testing.TB, reportErrors bool) HandlerFunc {
 		}
 
 		var arg2 []byte
-		if err := NewArgReader(call.Arg2Reader()).Read(&arg2); err != nil {
+		if err := tchannel.NewArgReader(call.Arg2Reader()).Read(&arg2); err != nil {
 			onError(fmt.Errorf("failed to read arg2"))
 			return
 		}
 
-		if err := NewArgWriter(response.Arg2Writer()).Write(nil); err != nil {
+		if err := tchannel.NewArgWriter(response.Arg2Writer()).Write(nil); err != nil {
 			onError(fmt.Errorf(""))
 			return
 		}
@@ -185,13 +185,13 @@ func streamPartialHandler(t testing.TB, reportErrors bool) HandlerFunc {
 	}
 }
 
-func testStreamArg(t *testing.T, f func(argWriter ArgWriter, argReader ArgReader)) {
+func testStreamArg(t *testing.T, f func(argWriter tchannel.ArgWriter, argReader tchannel.ArgReader)) {
 	defer testutils.SetTimeout(t, 2*time.Second)()
-	ctx, cancel := NewContext(time.Second)
+	ctx, cancel := tchannel.NewContext(time.Second)
 	defer cancel()
 
 	helper := streamHelper{t}
-	WithVerifiedServer(t, nil, func(ch *Channel, hostPort string) {
+	WithVerifiedServer(t, nil, func(ch *tchannel.Channel, hostPort string) {
 		ch.Register(streamPartialHandler(t, true /* report errors */), "echoStream")
 
 		argWriter, argReader := helper.startCall(ctx, ch, hostPort, ch.ServiceName())
@@ -215,7 +215,7 @@ func testStreamArg(t *testing.T, f func(argWriter ArgWriter, argReader ArgReader
 }
 
 func TestStreamPartialArg(t *testing.T) {
-	testStreamArg(t, func(argWriter ArgWriter, argReader ArgReader) {
+	testStreamArg(t, func(argWriter tchannel.ArgWriter, argReader tchannel.ArgReader) {
 		require.NoError(t, argWriter.Close(), "arg3 close failed")
 
 		// Once closed, we expect the reader to return EOF
@@ -227,7 +227,7 @@ func TestStreamPartialArg(t *testing.T) {
 }
 
 func TestStreamSendError(t *testing.T) {
-	testStreamArg(t, func(argWriter ArgWriter, argReader ArgReader) {
+	testStreamArg(t, func(argWriter tchannel.ArgWriter, argReader tchannel.ArgReader) {
 		// Send the magic number to request an error.
 		_, err := argWriter.Write([]byte{streamRequestError})
 		require.NoError(t, err, "arg3 write failed")
@@ -247,7 +247,7 @@ func TestStreamCancelled(t *testing.T) {
 	testutils.WithTestServer(t, opts, func(t testing.TB, ts *testutils.TestServer) {
 		ts.Register(streamPartialHandler(t, false /* report errors */), "echoStream")
 
-		ctx, cancel := NewContext(testutils.Timeout(time.Second))
+		ctx, cancel := tchannel.NewContext(testutils.Timeout(time.Second))
 		defer cancel()
 
 		helper := streamHelper{t}
@@ -295,7 +295,7 @@ func TestResponseClosedBeforeRequest(t *testing.T) {
 	testutils.WithTestServer(t, nil, func(t testing.TB, ts *testutils.TestServer) {
 		ts.Register(streamPartialHandler(t, false /* report errors */), "echoStream")
 
-		ctx, cancel := NewContext(testutils.Timeout(time.Second))
+		ctx, cancel := tchannel.NewContext(testutils.Timeout(time.Second))
 		defer cancel()
 
 		helper := streamHelper{t}

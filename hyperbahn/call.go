@@ -23,7 +23,7 @@ package hyperbahn
 import (
 	"errors"
 
-	"github.com/uber/tchannel-go"
+	"github.com/temporalio/tchannel-go"
 )
 
 var errEphemeralPeer = errors.New("cannot advertise on channel that has not called ListenAndServe")

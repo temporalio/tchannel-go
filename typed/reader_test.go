@@ -26,7 +26,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/uber/tchannel-go/testutils/testreader"
+	"github.com/temporalio/tchannel-go/testutils/testreader"
 )
 
 func nString(n int) []byte {

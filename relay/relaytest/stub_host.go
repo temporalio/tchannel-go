@@ -21,8 +21,8 @@
 package relaytest
 
 import (
-	"github.com/uber/tchannel-go"
-	"github.com/uber/tchannel-go/relay"
+	"github.com/temporalio/tchannel-go"
+	"github.com/temporalio/tchannel-go/relay"
 )
 
 // Ensure that the StubRelayHost implements tchannel.RelayHost and stubCall implements

@@ -25,11 +25,12 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/uber/tchannel-go"
-	"github.com/uber/tchannel-go/json"
-	"github.com/uber/tchannel-go/testutils"
-	"github.com/uber/tchannel-go/testutils/testtracing"
 	"go.uber.org/atomic"
+
+	"github.com/temporalio/tchannel-go"
+	"github.com/temporalio/tchannel-go/json"
+	"github.com/temporalio/tchannel-go/testutils"
+	"github.com/temporalio/tchannel-go/testutils/testtracing"
 
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -61,10 +62,10 @@ func TestTracingSpanAttributes(t *testing.T) {
 	tracer := mocktracer.New()
 
 	opts := &testutils.ChannelOpts{
-		ChannelOptions: ChannelOptions{Tracer: tracer},
+		ChannelOptions: tchannel.ChannelOptions{Tracer: tracer},
 		DisableRelay:   true,
 	}
-	WithVerifiedServer(t, opts, func(ch *Channel, hostPort string) {
+	WithVerifiedServer(t, opts, func(ch *tchannel.Channel, hostPort string) {
 		const (
 			customAppHeaderKey           = "futurama"
 			customAppHeaderExpectedValue = "simpsons"
@@ -96,7 +97,7 @@ func TestTracingSpanAttributes(t *testing.T) {
 			requestHeaders["$tracing$"+k] = "garbage"
 		}
 
-		ctx, cancel := NewContextBuilder(2 * time.Second).SetParentContext(ctx).Build()
+		ctx, cancel := tchannel.NewContextBuilder(2 * time.Second).SetParentContext(ctx).Build()
 		defer cancel()
 
 		peer := ch.Peers().GetOrAdd(ch.PeerInfo().HostPort)
@@ -174,9 +175,9 @@ func TestTracingSpanAttributes(t *testing.T) {
 // concurrent writes to the map when injecting tracing headers.
 func TestReusableHeaders(t *testing.T) {
 	opts := &testutils.ChannelOpts{
-		ChannelOptions: ChannelOptions{Tracer: mocktracer.New()},
+		ChannelOptions: tchannel.ChannelOptions{Tracer: mocktracer.New()},
 	}
-	WithVerifiedServer(t, opts, func(ch *Channel, hostPort string) {
+	WithVerifiedServer(t, opts, func(ch *tchannel.Channel, hostPort string) {
 		jsonHandler := &JSONHandler{TraceHandler: testtracing.TraceHandler{Ch: ch}, t: t}
 		json.Register(ch, json.Handlers{"call": jsonHandler.callJSON}, jsonHandler.onError)
 
@@ -185,7 +186,7 @@ func TestReusableHeaders(t *testing.T) {
 		ctx := opentracing.ContextWithSpan(context.Background(), span)
 
 		sharedHeaders := map[string]string{"life": "42"}
-		ctx, cancel := NewContextBuilder(2 * time.Second).
+		ctx, cancel := tchannel.NewContextBuilder(2 * time.Second).
 			SetHeaders(sharedHeaders).
 			SetParentContext(ctx).
 			Build()

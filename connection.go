@@ -30,7 +30,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/uber/tchannel-go/tos"
+	"github.com/temporalio/tchannel-go/tos"
 
 	"go.uber.org/atomic"
 	"golang.org/x/net/context"
@@ -48,7 +48,7 @@ const (
 	DefaultConnectTimeout = 5 * time.Second
 
 	// DefaultConnectionBufferSize is the default size for the connection's read
-	//and write channels.
+	// and write channels.
 	DefaultConnectionBufferSize = 512
 )
 

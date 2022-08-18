@@ -26,19 +26,19 @@ import (
 	"os"
 	"testing"
 
-	. "github.com/uber/tchannel-go"
+	"github.com/temporalio/tchannel-go"
 
-	"github.com/uber/tchannel-go/testutils/goroutines"
+	"github.com/temporalio/tchannel-go/testutils/goroutines"
 )
 
 func checkAllChannels() error {
-	ch, err := NewChannel("test-end", nil)
+	ch, err := tchannel.NewChannel("test-end", nil)
 	if err != nil {
 		return err
 	}
 
 	var foundChannels bool
-	allChannels := ch.IntrospectOthers(&IntrospectionOptions{})
+	allChannels := ch.IntrospectOthers(&tchannel.IntrospectionOptions{})
 	for _, cs := range allChannels {
 		if len(cs) != 0 {
 			foundChannels = true

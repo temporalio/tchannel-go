@@ -24,7 +24,7 @@ import (
 	"log"
 	"net"
 )
-import "github.com/uber/tchannel-go"
+import "github.com/temporalio/tchannel-go"
 
 type tcpFrameRelay struct {
 	*tcpRelay

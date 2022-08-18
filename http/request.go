@@ -24,8 +24,8 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/uber/tchannel-go"
-	"github.com/uber/tchannel-go/typed"
+	"github.com/temporalio/tchannel-go"
+	"github.com/temporalio/tchannel-go/typed"
 )
 
 // WriteRequest writes a http.Request to the given writers.

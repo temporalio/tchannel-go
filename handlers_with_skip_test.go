@@ -26,12 +26,12 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/uber/tchannel-go"
-	. "github.com/uber/tchannel-go"
-	"github.com/uber/tchannel-go/raw"
-	"github.com/uber/tchannel-go/testutils"
 	"go.uber.org/atomic"
 	"golang.org/x/net/context"
+
+	"github.com/temporalio/tchannel-go"
+	"github.com/temporalio/tchannel-go/raw"
+	"github.com/temporalio/tchannel-go/testutils"
 )
 
 func procedure(svc, method string) string {
@@ -51,7 +51,7 @@ func TestUserHandlerWithSkip(t *testing.T) {
 
 	opts := testutils.NewOpts().NoRelay()
 	opts.ServiceName = svc
-	opts.ChannelOptions = ChannelOptions{
+	opts.ChannelOptions = tchannel.ChannelOptions{
 		Handler:            userCounter,
 		SkipHandlerMethods: []string{procedure(svc, userHandleSkipMethod)},
 	}
@@ -79,16 +79,16 @@ func TestUserHandlerWithSkip(t *testing.T) {
 }
 
 func TestUserHandlerWithSkipInvalidInput(t *testing.T) {
-	opts := &ChannelOptions{
+	opts := &tchannel.ChannelOptions{
 		Handler:            &recordHandler{},
 		SkipHandlerMethods: []string{"notDelimitedByDoubleColons"},
 	}
-	_, err := NewChannel("svc", opts)
+	_, err := tchannel.NewChannel("svc", opts)
 	assert.EqualError(t, err, `each "SkipHandlerMethods" value should be of service::Method format but got "notDelimitedByDoubleColons"`)
 }
 
 type recordHandler struct{ c atomic.Uint32 }
 
-func (r *recordHandler) Handle(ctx context.Context, call *InboundCall) {
+func (r *recordHandler) Handle(ctx context.Context, call *tchannel.InboundCall) {
 	r.c.Inc()
 }

@@ -25,28 +25,28 @@ import (
 	"errors"
 	"testing"
 
-	. "github.com/uber/tchannel-go"
+	"github.com/temporalio/tchannel-go"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func field(k string, v interface{}) LogField {
-	return LogField{Key: k, Value: v}
+func field(k string, v interface{}) tchannel.LogField {
+	return tchannel.LogField{Key: k, Value: v}
 }
 
 func TestErrField(t *testing.T) {
-	assert.Equal(t, field("error", "foo"), ErrField(errors.New("foo")))
+	assert.Equal(t, field("error", "foo"), tchannel.ErrField(errors.New("foo")))
 }
 
 func TestWriterLogger(t *testing.T) {
 	var buf bytes.Buffer
-	var bufLogger = NewLogger(&buf)
+	var bufLogger = tchannel.NewLogger(&buf)
 
-	debugf := func(logger Logger, msg string, args ...interface{}) { logger.Debugf(msg, args...) }
-	infof := func(logger Logger, msg string, args ...interface{}) { logger.Infof(msg, args...) }
+	debugf := func(logger tchannel.Logger, msg string, args ...interface{}) { logger.Debugf(msg, args...) }
+	infof := func(logger tchannel.Logger, msg string, args ...interface{}) { logger.Infof(msg, args...) }
 
 	levels := []struct {
-		levelFunc   func(logger Logger, msg string, args ...interface{})
+		levelFunc   func(logger tchannel.Logger, msg string, args ...interface{})
 		levelPrefix string
 	}{
 		{debugf, "D"},
@@ -57,7 +57,7 @@ func TestWriterLogger(t *testing.T) {
 		tagLogger1 := bufLogger.WithFields(field("key1", "value1"))
 		tagLogger2 := bufLogger.WithFields(field("key2", "value2"), field("key3", "value3"))
 
-		verifyMsgAndPrefix := func(logger Logger) {
+		verifyMsgAndPrefix := func(logger tchannel.Logger) {
 			buf.Reset()
 			level.levelFunc(logger, "mes%v", "sage")
 
@@ -82,15 +82,15 @@ func TestWriterLogger(t *testing.T) {
 
 func TestWriterLoggerNoSubstitution(t *testing.T) {
 	var buf bytes.Buffer
-	var bufLogger = NewLogger(&buf)
+	var bufLogger = tchannel.NewLogger(&buf)
 
-	logDebug := func(logger Logger, msg string) { logger.Debug(msg) }
-	logInfo := func(logger Logger, msg string) { logger.Info(msg) }
-	logWarn := func(logger Logger, msg string) { logger.Warn(msg) }
-	logError := func(logger Logger, msg string) { logger.Error(msg) }
+	logDebug := func(logger tchannel.Logger, msg string) { logger.Debug(msg) }
+	logInfo := func(logger tchannel.Logger, msg string) { logger.Info(msg) }
+	logWarn := func(logger tchannel.Logger, msg string) { logger.Warn(msg) }
+	logError := func(logger tchannel.Logger, msg string) { logger.Error(msg) }
 
 	levels := []struct {
-		levelFunc   func(logger Logger, msg string)
+		levelFunc   func(logger tchannel.Logger, msg string)
 		levelPrefix string
 	}{
 		{logDebug, "D"},
@@ -103,7 +103,7 @@ func TestWriterLoggerNoSubstitution(t *testing.T) {
 		tagLogger1 := bufLogger.WithFields(field("key1", "value1"))
 		tagLogger2 := bufLogger.WithFields(field("key2", "value2"), field("key3", "value3"))
 
-		verifyMsgAndPrefix := func(logger Logger) {
+		verifyMsgAndPrefix := func(logger tchannel.Logger) {
 			buf.Reset()
 			level.levelFunc(logger, "test-msg")
 
@@ -128,21 +128,21 @@ func TestWriterLoggerNoSubstitution(t *testing.T) {
 
 func TestLevelLogger(t *testing.T) {
 	var buf bytes.Buffer
-	var bufLogger = NewLogger(&buf)
+	var bufLogger = tchannel.NewLogger(&buf)
 
-	expectedLines := map[LogLevel]int{
-		LogLevelAll:   6,
-		LogLevelDebug: 6,
-		LogLevelInfo:  4,
-		LogLevelWarn:  2,
-		LogLevelError: 1,
-		LogLevelFatal: 0,
+	expectedLines := map[tchannel.LogLevel]int{
+		tchannel.LogLevelAll:   6,
+		tchannel.LogLevelDebug: 6,
+		tchannel.LogLevelInfo:  4,
+		tchannel.LogLevelWarn:  2,
+		tchannel.LogLevelError: 1,
+		tchannel.LogLevelFatal: 0,
 	}
-	for level := LogLevelFatal; level >= LogLevelAll; level-- {
+	for level := tchannel.LogLevelFatal; level >= tchannel.LogLevelAll; level-- {
 		buf.Reset()
-		levelLogger := NewLevelLogger(bufLogger, level)
+		levelLogger := tchannel.NewLevelLogger(bufLogger, level)
 
-		for l := LogLevel(0); l <= LogLevelFatal; l++ {
+		for l := tchannel.LogLevel(0); l <= tchannel.LogLevelFatal; l++ {
 			assert.Equal(t, level <= l, levelLogger.Enabled(l), "levelLogger.Enabled(%v) at %v", l, level)
 		}
 

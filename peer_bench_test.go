@@ -24,15 +24,15 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/uber/tchannel-go"
+	"github.com/temporalio/tchannel-go"
 
-	"github.com/uber/tchannel-go/testutils"
+	"github.com/temporalio/tchannel-go/testutils"
 
 	"github.com/stretchr/testify/require"
 )
 
 func benchmarkGetConnection(b *testing.B, numIncoming, numOutgoing int) {
-	ctx, cancel := NewContext(10 * time.Second)
+	ctx, cancel := tchannel.NewContext(10 * time.Second)
 	defer cancel()
 
 	s1 := testutils.NewServer(b, nil)

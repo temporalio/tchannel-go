@@ -21,17 +21,18 @@
 package thrift_test
 
 import (
+	"context"
 	"testing"
 	"time"
 
 	// Test is in a separate package to avoid circular dependencies.
-	. "github.com/uber/tchannel-go/thrift"
+	tcthrift "github.com/temporalio/tchannel-go/thrift"
 
-	"github.com/uber/tchannel-go"
-	"github.com/uber/tchannel-go/raw"
-	"github.com/uber/tchannel-go/testutils"
-	gen "github.com/uber/tchannel-go/thrift/gen-go/test"
-	"github.com/uber/tchannel-go/thrift/mocks"
+	"github.com/temporalio/tchannel-go"
+	"github.com/temporalio/tchannel-go/raw"
+	"github.com/temporalio/tchannel-go/testutils"
+	gen "github.com/temporalio/tchannel-go/thrift/gen-go/test"
+	"github.com/temporalio/tchannel-go/thrift/mocks"
 
 	"github.com/apache/thrift/lib/go/thrift"
 	"github.com/stretchr/testify/assert"
@@ -41,20 +42,23 @@ import (
 func serializeStruct(t *testing.T, s thrift.TStruct) []byte {
 	trans := thrift.NewTMemoryBuffer()
 	p := thrift.NewTBinaryProtocolTransport(trans)
-	require.NoError(t, s.Write(p), "Struct serialization failed")
+	require.NoError(t, s.Write(context.Background(), p), "Struct serialization failed")
 	return trans.Bytes()
 }
 
 func TestInvalidThriftBytes(t *testing.T) {
-	ctx, cancel := NewContext(time.Second)
+	ctx, cancel := tcthrift.NewContext(time.Second)
 	defer cancel()
 
 	ch := testutils.NewClient(t, nil)
 	sCh := testutils.NewServer(t, nil)
 	defer sCh.Close()
 
-	svr := NewServer(sCh)
-	svr.Register(gen.NewTChanSecondServiceServer(new(mocks.TChanSecondService)))
+	svr := tcthrift.NewServer(sCh)
+	mock := new(mocks.TChanSecondService)
+	svr.Register(gen.NewTChanSecondServiceServer(mock))
+
+	mock.On("Echo", ctxArg(), "").Return("", tchannel.NewSystemError(tchannel.ErrCodeBadRequest, ""))
 
 	tests := []struct {
 		name string
