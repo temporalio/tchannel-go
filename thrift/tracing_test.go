@@ -4,10 +4,10 @@ import (
 	json_encoding "encoding/json"
 	"testing"
 
-	"github.com/uber/tchannel-go"
-	"github.com/uber/tchannel-go/testutils/testtracing"
-	"github.com/uber/tchannel-go/thrift"
-	gen "github.com/uber/tchannel-go/thrift/gen-go/test"
+	"github.com/temporalio/tchannel-go"
+	"github.com/temporalio/tchannel-go/testutils/testtracing"
+	"github.com/temporalio/tchannel-go/thrift"
+	gen "github.com/temporalio/tchannel-go/thrift/gen-go/test"
 
 	"golang.org/x/net/context"
 )

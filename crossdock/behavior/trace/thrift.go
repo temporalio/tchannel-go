@@ -23,10 +23,10 @@ package trace
 import (
 	"encoding/json"
 
-	"github.com/uber/tchannel-go"
-	"github.com/uber/tchannel-go/crossdock/log"
-	"github.com/uber/tchannel-go/thrift"
-	gen "github.com/uber/tchannel-go/thrift/gen-go/test"
+	"github.com/temporalio/tchannel-go"
+	"github.com/temporalio/tchannel-go/crossdock/log"
+	"github.com/temporalio/tchannel-go/thrift"
+	gen "github.com/temporalio/tchannel-go/thrift/gen-go/test"
 
 	"golang.org/x/net/context"
 )

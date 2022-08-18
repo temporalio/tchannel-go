@@ -25,8 +25,8 @@ import (
 	"io"
 	"testing"
 
-	"github.com/uber/tchannel-go/testutils/testreader"
-	"github.com/uber/tchannel-go/testutils/testwriter"
+	"github.com/temporalio/tchannel-go/testutils/testreader"
+	"github.com/temporalio/tchannel-go/testutils/testwriter"
 
 	"github.com/stretchr/testify/assert"
 )

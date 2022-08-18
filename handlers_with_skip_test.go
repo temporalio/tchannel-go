@@ -29,9 +29,9 @@ import (
 	"go.uber.org/atomic"
 	"golang.org/x/net/context"
 
-	"github.com/uber/tchannel-go"
-	"github.com/uber/tchannel-go/raw"
-	"github.com/uber/tchannel-go/testutils"
+	"github.com/temporalio/tchannel-go"
+	"github.com/temporalio/tchannel-go/raw"
+	"github.com/temporalio/tchannel-go/testutils"
 )
 
 func procedure(svc, method string) string {

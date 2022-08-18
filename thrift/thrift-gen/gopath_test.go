@@ -57,19 +57,19 @@ func TestGoPathCandidates(t *testing.T) {
 	}{
 		{
 			goPath:   "onepath",
-			filename: "github.com/uber/tchannel-go/tchan.thrift-gen",
+			filename: "github.com/temporalio/tchannel-go/tchan.thrift-gen",
 			expectedCandidates: []string{
-				"github.com/uber/tchannel-go/tchan.thrift-gen",
-				"onepath/src/github.com/uber/tchannel-go/tchan.thrift-gen",
+				"github.com/temporalio/tchannel-go/tchan.thrift-gen",
+				"onepath/src/github.com/temporalio/tchannel-go/tchan.thrift-gen",
 			},
 		},
 		{
 			goPath:   "onepath:secondpath",
-			filename: "github.com/uber/tchannel-go/tchan.thrift-gen",
+			filename: "github.com/temporalio/tchannel-go/tchan.thrift-gen",
 			expectedCandidates: []string{
-				"github.com/uber/tchannel-go/tchan.thrift-gen",
-				"onepath/src/github.com/uber/tchannel-go/tchan.thrift-gen",
-				"secondpath/src/github.com/uber/tchannel-go/tchan.thrift-gen",
+				"github.com/temporalio/tchannel-go/tchan.thrift-gen",
+				"onepath/src/github.com/temporalio/tchannel-go/tchan.thrift-gen",
+				"secondpath/src/github.com/temporalio/tchannel-go/tchan.thrift-gen",
 			},
 		},
 	}

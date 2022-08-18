@@ -44,9 +44,9 @@ import (
 
 	"github.com/opentracing/opentracing-go"
 
-	"github.com/uber/tchannel-go"
-	"github.com/uber/tchannel-go/crossdock/common"
-	"github.com/uber/tchannel-go/crossdock/log"
+	"github.com/temporalio/tchannel-go"
+	"github.com/temporalio/tchannel-go/crossdock/common"
+	"github.com/temporalio/tchannel-go/crossdock/log"
 )
 
 // Server implements S2-S3 servers

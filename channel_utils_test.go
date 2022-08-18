@@ -23,9 +23,9 @@ package tchannel_test
 import (
 	"testing"
 
-	"github.com/uber/tchannel-go"
+	"github.com/temporalio/tchannel-go"
 
-	"github.com/uber/tchannel-go/testutils"
+	"github.com/temporalio/tchannel-go/testutils"
 )
 
 // NewServer creates a new server and returns the channel, service name, and host port.

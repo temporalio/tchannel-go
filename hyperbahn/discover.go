@@ -23,8 +23,8 @@ package hyperbahn
 import (
 	"time"
 
-	"github.com/uber/tchannel-go/hyperbahn/gen-go/hyperbahn"
-	"github.com/uber/tchannel-go/thrift"
+	"github.com/temporalio/tchannel-go/hyperbahn/gen-go/hyperbahn"
+	"github.com/temporalio/tchannel-go/thrift"
 )
 
 // Discover queries Hyperbahn for a list of peers that are currently

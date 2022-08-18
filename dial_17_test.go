@@ -28,11 +28,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/uber/tchannel-go"
+	"github.com/temporalio/tchannel-go"
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/uber/tchannel-go/testutils"
+	"github.com/temporalio/tchannel-go/testutils"
 )
 
 func TestNetDialCancelContext(t *testing.T) {

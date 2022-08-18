@@ -25,8 +25,8 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/uber/tchannel-go"
-	"github.com/uber/tchannel-go/thrift/gen-go/meta"
+	"github.com/temporalio/tchannel-go"
+	"github.com/temporalio/tchannel-go/thrift/gen-go/meta"
 )
 
 // HealthFunc is the interface for custom health endpoints.

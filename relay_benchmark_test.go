@@ -9,10 +9,10 @@ import (
 	"github.com/bmizerany/perks/quantile"
 	"github.com/stretchr/testify/require"
 
-	"github.com/uber/tchannel-go"
-	"github.com/uber/tchannel-go/benchmark"
-	"github.com/uber/tchannel-go/relay"
-	"github.com/uber/tchannel-go/testutils"
+	"github.com/temporalio/tchannel-go"
+	"github.com/temporalio/tchannel-go/benchmark"
+	"github.com/temporalio/tchannel-go/relay"
+	"github.com/temporalio/tchannel-go/testutils"
 )
 
 type benchmarkParams struct {

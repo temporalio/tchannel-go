@@ -26,8 +26,8 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/uber/tchannel-go"
-	"github.com/uber/tchannel-go/json"
+	"github.com/temporalio/tchannel-go"
+	"github.com/temporalio/tchannel-go/json"
 )
 
 var log = tchannel.SimpleLogger

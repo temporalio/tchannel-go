@@ -8,7 +8,7 @@ import (
 	"encoding/binary"
 	"io"
 
-	"github.com/uber/tchannel-go/typed"
+	"github.com/temporalio/tchannel-go/typed"
 )
 
 // KeyValIterator is a iterator for reading tchannel-thrift Arg2 Scheme,

@@ -24,7 +24,7 @@ import (
 	"net"
 	"strconv"
 
-	"github.com/uber/tchannel-go/hyperbahn/gen-go/hyperbahn"
+	"github.com/temporalio/tchannel-go/hyperbahn/gen-go/hyperbahn"
 )
 
 // intToIP4 converts an integer IP representation into a 4-byte net.IP struct

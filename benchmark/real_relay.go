@@ -24,9 +24,9 @@ import (
 	"errors"
 	"os"
 
-	"github.com/uber/tchannel-go"
-	"github.com/uber/tchannel-go/relay"
-	"github.com/uber/tchannel-go/relay/relaytest"
+	"github.com/temporalio/tchannel-go"
+	"github.com/temporalio/tchannel-go/relay"
+	"github.com/temporalio/tchannel-go/relay/relaytest"
 	"go.uber.org/atomic"
 )
 

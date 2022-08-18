@@ -25,7 +25,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/uber/tchannel-go/typed"
+	"github.com/temporalio/tchannel-go/typed"
 
 	"go.uber.org/atomic"
 	"golang.org/x/net/context"

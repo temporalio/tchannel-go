@@ -24,8 +24,8 @@ import (
 	json_encoding "encoding/json"
 	"testing"
 
-	"github.com/uber/tchannel-go"
-	"github.com/uber/tchannel-go/raw"
+	"github.com/temporalio/tchannel-go"
+	"github.com/temporalio/tchannel-go/raw"
 
 	"golang.org/x/net/context"
 )

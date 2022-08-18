@@ -25,8 +25,8 @@ import (
 	"strings"
 	"sync"
 
-	tchannel "github.com/uber/tchannel-go"
-	"github.com/uber/tchannel-go/internal/argreader"
+	tchannel "github.com/temporalio/tchannel-go"
+	"github.com/temporalio/tchannel-go/internal/argreader"
 
 	"github.com/apache/thrift/lib/go/thrift"
 	"golang.org/x/net/context"

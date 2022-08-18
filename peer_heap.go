@@ -24,7 +24,7 @@ import (
 	"container/heap"
 	"math/rand"
 
-	"github.com/uber/tchannel-go/trand"
+	"github.com/temporalio/tchannel-go/trand"
 )
 
 // peerHeap maintains a min-heap of peers based on the peers' score. All method

@@ -27,9 +27,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/uber/tchannel-go"
-	"github.com/uber/tchannel-go/json"
-	"github.com/uber/tchannel-go/testutils"
+	"github.com/temporalio/tchannel-go"
+	"github.com/temporalio/tchannel-go/json"
+	"github.com/temporalio/tchannel-go/testutils"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -40,7 +40,7 @@ import (
 func TestIntrospection(t *testing.T) {
 	opts := testutils.NewOpts().
 		AddLogFilter("Couldn't find handler", 1). // call with service name fails
-		NoRelay()                                 // "tchannel" service name is not forwarded.
+		NoRelay() // "tchannel" service name is not forwarded.
 	testutils.WithTestServer(t, opts, func(t testing.TB, ts *testutils.TestServer) {
 		client := testutils.NewClient(t, nil)
 		defer client.Close()

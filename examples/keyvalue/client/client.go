@@ -28,10 +28,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/uber/tchannel-go"
-	"github.com/uber/tchannel-go/examples/keyvalue/gen-go/keyvalue"
-	"github.com/uber/tchannel-go/hyperbahn"
-	"github.com/uber/tchannel-go/thrift"
+	"github.com/temporalio/tchannel-go"
+	"github.com/temporalio/tchannel-go/examples/keyvalue/gen-go/keyvalue"
+	"github.com/temporalio/tchannel-go/hyperbahn"
+	"github.com/temporalio/tchannel-go/thrift"
 )
 
 var curUser = "anonymous"

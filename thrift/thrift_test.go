@@ -29,12 +29,12 @@ import (
 	"time"
 
 	// Test is in a separate package to avoid circular dependencies.
-	tcthrift "github.com/uber/tchannel-go/thrift"
+	tcthrift "github.com/temporalio/tchannel-go/thrift"
 
-	"github.com/uber/tchannel-go"
-	"github.com/uber/tchannel-go/testutils"
-	gen "github.com/uber/tchannel-go/thrift/gen-go/test"
-	"github.com/uber/tchannel-go/thrift/mocks"
+	"github.com/temporalio/tchannel-go"
+	"github.com/temporalio/tchannel-go/testutils"
+	gen "github.com/temporalio/tchannel-go/thrift/gen-go/test"
+	"github.com/temporalio/tchannel-go/thrift/mocks"
 
 	"github.com/apache/thrift/lib/go/thrift"
 	"github.com/stretchr/testify/assert"

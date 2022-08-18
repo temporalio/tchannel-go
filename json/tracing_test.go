@@ -3,12 +3,12 @@ package json_test
 import (
 	"testing"
 
-	"github.com/uber/tchannel-go"
-	"github.com/uber/tchannel-go/json"
+	"github.com/temporalio/tchannel-go"
+	"github.com/temporalio/tchannel-go/json"
 
 	"golang.org/x/net/context"
 
-	"github.com/uber/tchannel-go/testutils/testtracing"
+	"github.com/temporalio/tchannel-go/testutils/testtracing"
 )
 
 // JSONHandler tests tracing over JSON encoding

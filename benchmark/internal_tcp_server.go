@@ -24,7 +24,7 @@ import (
 	"log"
 	"net"
 
-	"github.com/uber/tchannel-go"
+	"github.com/temporalio/tchannel-go"
 
 	"go.uber.org/atomic"
 )

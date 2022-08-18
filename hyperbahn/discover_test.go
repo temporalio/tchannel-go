@@ -23,10 +23,10 @@ package hyperbahn_test
 import (
 	"testing"
 
-	"github.com/uber/tchannel-go/hyperbahn"
+	"github.com/temporalio/tchannel-go/hyperbahn"
 
-	"github.com/uber/tchannel-go/testutils"
-	"github.com/uber/tchannel-go/testutils/mockhyperbahn"
+	"github.com/temporalio/tchannel-go/testutils"
+	"github.com/temporalio/tchannel-go/testutils/mockhyperbahn"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

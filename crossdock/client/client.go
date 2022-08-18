@@ -25,7 +25,7 @@ import (
 	"net"
 	"net/http"
 
-	"github.com/uber/tchannel-go/crossdock/common"
+	"github.com/temporalio/tchannel-go/crossdock/common"
 
 	"github.com/crossdock/crossdock-go"
 )

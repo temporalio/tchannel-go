@@ -20,7 +20,7 @@
 
 package peers
 
-import "github.com/uber/tchannel-go"
+import "github.com/temporalio/tchannel-go"
 
 type hrwScoreCalc struct {
 	clientID uint32

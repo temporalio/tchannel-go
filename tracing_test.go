@@ -27,10 +27,10 @@ import (
 
 	"go.uber.org/atomic"
 
-	"github.com/uber/tchannel-go"
-	"github.com/uber/tchannel-go/json"
-	"github.com/uber/tchannel-go/testutils"
-	"github.com/uber/tchannel-go/testutils/testtracing"
+	"github.com/temporalio/tchannel-go"
+	"github.com/temporalio/tchannel-go/json"
+	"github.com/temporalio/tchannel-go/testutils"
+	"github.com/temporalio/tchannel-go/testutils/testtracing"
 
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"

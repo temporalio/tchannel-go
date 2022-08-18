@@ -23,7 +23,7 @@ package benchmark
 import (
 	"time"
 
-	"github.com/uber/tchannel-go/testutils"
+	"github.com/temporalio/tchannel-go/testutils"
 )
 
 type internalMultiClient struct {

@@ -1,4 +1,4 @@
-module github.com/uber/tchannel-go
+module github.com/temporalio/tchannel-go
 
 go 1.17
 

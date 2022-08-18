@@ -8,8 +8,8 @@ import (
 
 	athrift "github.com/apache/thrift/lib/go/thrift"
 	"github.com/stretchr/testify/assert"
-	"github.com/uber/tchannel-go"
-	"github.com/uber/tchannel-go/testutils"
+	"github.com/temporalio/tchannel-go"
+	"github.com/temporalio/tchannel-go/testutils"
 )
 
 var errIO = errors.New("IO Error")

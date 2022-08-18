@@ -23,8 +23,8 @@ package thrift
 import (
 	"context"
 
-	"github.com/uber/tchannel-go"
-	"github.com/uber/tchannel-go/internal/argreader"
+	"github.com/temporalio/tchannel-go"
+	"github.com/temporalio/tchannel-go/internal/argreader"
 
 	"github.com/apache/thrift/lib/go/thrift"
 )

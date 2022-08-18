@@ -27,7 +27,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/uber/tchannel-go/trand"
+	"github.com/temporalio/tchannel-go/trand"
 
 	"go.uber.org/atomic"
 	"golang.org/x/net/context"

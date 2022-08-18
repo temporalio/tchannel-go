@@ -30,8 +30,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/uber/tchannel-go/relay"
-	"github.com/uber/tchannel-go/typed"
+	"github.com/temporalio/tchannel-go/relay"
+	"github.com/temporalio/tchannel-go/typed"
 	"go.uber.org/atomic"
 )
 

@@ -25,12 +25,12 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/uber/tchannel-go"
-	"github.com/uber/tchannel-go/hyperbahn"
-	hthrift "github.com/uber/tchannel-go/hyperbahn/gen-go/hyperbahn"
-	"github.com/uber/tchannel-go/json"
-	"github.com/uber/tchannel-go/relay/relaytest"
-	"github.com/uber/tchannel-go/thrift"
+	"github.com/temporalio/tchannel-go"
+	"github.com/temporalio/tchannel-go/hyperbahn"
+	hthrift "github.com/temporalio/tchannel-go/hyperbahn/gen-go/hyperbahn"
+	"github.com/temporalio/tchannel-go/json"
+	"github.com/temporalio/tchannel-go/relay/relaytest"
+	"github.com/temporalio/tchannel-go/thrift"
 )
 
 // Mock is up a mock Hyperbahn server for tests.

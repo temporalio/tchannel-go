@@ -26,9 +26,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/uber/tchannel-go"
+	"github.com/temporalio/tchannel-go"
 
-	"github.com/uber/tchannel-go/testutils/goroutines"
+	"github.com/temporalio/tchannel-go/testutils/goroutines"
 )
 
 func checkAllChannels() error {

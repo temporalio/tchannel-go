@@ -23,7 +23,7 @@ package http
 import (
 	"net/http"
 
-	"github.com/uber/tchannel-go/typed"
+	"github.com/temporalio/tchannel-go/typed"
 )
 
 func writeHeaders(wb *typed.WriteBuffer, form http.Header) {

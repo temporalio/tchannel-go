@@ -24,7 +24,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/uber/tchannel-go/typed"
+	"github.com/temporalio/tchannel-go/typed"
 )
 
 // WriteHeaders writes the given key-value pairs using the following encoding:

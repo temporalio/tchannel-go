@@ -27,11 +27,11 @@ import (
 	"sync"
 	"testing"
 
-	tcthrift "github.com/uber/tchannel-go/thrift"
+	tcthrift "github.com/temporalio/tchannel-go/thrift"
 
-	"github.com/uber/tchannel-go/testutils/testreader"
-	"github.com/uber/tchannel-go/testutils/testwriter"
-	"github.com/uber/tchannel-go/thrift/gen-go/test"
+	"github.com/temporalio/tchannel-go/testutils/testreader"
+	"github.com/temporalio/tchannel-go/testutils/testwriter"
+	"github.com/temporalio/tchannel-go/thrift/gen-go/test"
 
 	"github.com/apache/thrift/lib/go/thrift"
 	"github.com/stretchr/testify/assert"

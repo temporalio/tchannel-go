@@ -26,10 +26,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/uber/tchannel-go"
-	"github.com/uber/tchannel-go/raw"
-	"github.com/uber/tchannel-go/relay/relaytest"
-	"github.com/uber/tchannel-go/testutils/goroutines"
+	"github.com/temporalio/tchannel-go"
+	"github.com/temporalio/tchannel-go/raw"
+	"github.com/temporalio/tchannel-go/relay/relaytest"
+	"github.com/temporalio/tchannel-go/testutils/goroutines"
 	"go.uber.org/multierr"
 
 	"github.com/stretchr/testify/assert"

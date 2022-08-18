@@ -25,7 +25,7 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/uber/tchannel-go"
+	"github.com/temporalio/tchannel-go"
 )
 
 const (

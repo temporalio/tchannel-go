@@ -24,7 +24,7 @@ import (
 	"fmt"
 
 	athrift "github.com/apache/thrift/lib/go/thrift"
-	gen "github.com/uber/tchannel-go/thrift/gen-go/meta"
+	gen "github.com/temporalio/tchannel-go/thrift/gen-go/meta"
 )
 
 // Interfaces for the service and client for the services defined in the IDL.

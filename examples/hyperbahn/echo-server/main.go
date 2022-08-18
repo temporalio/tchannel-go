@@ -27,9 +27,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/uber/tchannel-go"
-	"github.com/uber/tchannel-go/hyperbahn"
-	"github.com/uber/tchannel-go/raw"
+	"github.com/temporalio/tchannel-go"
+	"github.com/temporalio/tchannel-go/hyperbahn"
+	"github.com/temporalio/tchannel-go/raw"
 
 	"golang.org/x/net/context"
 )

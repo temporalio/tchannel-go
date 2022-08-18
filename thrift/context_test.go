@@ -25,12 +25,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/uber/tchannel-go/thrift"
+	"github.com/temporalio/tchannel-go/thrift"
 
-	"github.com/uber/tchannel-go"
-	"github.com/uber/tchannel-go/raw"
-	"github.com/uber/tchannel-go/testutils"
-	gen "github.com/uber/tchannel-go/thrift/gen-go/test"
+	"github.com/temporalio/tchannel-go"
+	"github.com/temporalio/tchannel-go/raw"
+	"github.com/temporalio/tchannel-go/testutils"
+	gen "github.com/temporalio/tchannel-go/thrift/gen-go/test"
 
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"

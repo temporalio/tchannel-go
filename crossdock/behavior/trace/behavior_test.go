@@ -26,10 +26,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/uber/tchannel-go"
-	"github.com/uber/tchannel-go/crossdock/client"
-	"github.com/uber/tchannel-go/crossdock/common"
-	"github.com/uber/tchannel-go/crossdock/server"
+	"github.com/temporalio/tchannel-go"
+	"github.com/temporalio/tchannel-go/crossdock/client"
+	"github.com/temporalio/tchannel-go/crossdock/common"
+	"github.com/temporalio/tchannel-go/crossdock/server"
 
 	"github.com/crossdock/crossdock-go"
 	"github.com/opentracing/opentracing-go"

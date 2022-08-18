@@ -23,9 +23,9 @@ package tchannel_test
 import (
 	"testing"
 
-	"github.com/uber/tchannel-go"
+	"github.com/temporalio/tchannel-go"
 
-	"github.com/uber/tchannel-go/testutils"
+	"github.com/temporalio/tchannel-go/testutils"
 )
 
 // WithVerifiedServer runs the given test function with a server channel that is verified

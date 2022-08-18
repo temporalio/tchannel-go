@@ -23,7 +23,7 @@ package raw
 import (
 	"golang.org/x/net/context"
 
-	"github.com/uber/tchannel-go"
+	"github.com/temporalio/tchannel-go"
 )
 
 // Handler is the interface for a raw handler.

@@ -25,7 +25,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/uber/tchannel-go"
+	"github.com/temporalio/tchannel-go"
 
 	"github.com/stretchr/testify/assert"
 )

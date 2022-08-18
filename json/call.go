@@ -23,7 +23,7 @@ package json
 import (
 	"fmt"
 
-	"github.com/uber/tchannel-go"
+	"github.com/temporalio/tchannel-go"
 
 	"golang.org/x/net/context"
 )

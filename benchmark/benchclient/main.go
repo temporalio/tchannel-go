@@ -31,7 +31,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/uber/tchannel-go/benchmark"
+	"github.com/temporalio/tchannel-go/benchmark"
 )
 
 var (

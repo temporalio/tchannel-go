@@ -26,12 +26,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/uber/tchannel-go"
-
-	"github.com/uber/tchannel-go/raw"
-	"github.com/uber/tchannel-go/testutils"
-
 	"github.com/streadway/quantile"
+
+	"github.com/temporalio/tchannel-go"
+
+	"github.com/temporalio/tchannel-go/raw"
+	"github.com/temporalio/tchannel-go/testutils"
+
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
 )

@@ -25,8 +25,8 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/uber/tchannel-go"
-	"github.com/uber/tchannel-go/raw"
+	"github.com/temporalio/tchannel-go"
+	"github.com/temporalio/tchannel-go/raw"
 
 	"go.uber.org/atomic"
 	"golang.org/x/net/context"
