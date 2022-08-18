@@ -12,8 +12,8 @@ fi
 
 # Thrift releases found at https://thrift.apache.org/download.
 # To update this, you need to update the version, SHA256, and then run install-thrift.sh -c
-THRIFT_VERSION="0.15.0"
-THRIFT_SHA256="d5883566d161f8f6ddd4e21f3a9e3e6b8272799d054820f1c25b11e86718f86b"
+THRIFT_VERSION="0.16.0"
+THRIFT_SHA256="f460b5c1ca30d8918ff95ea3eb6291b3951cf518553566088f3f2be8981f6209"
 THRIFT_TAR="thrift-${THRIFT_VERSION}.tar.gz"
 THRIFT_URL="https://dlcdn.apache.org/thrift/${THRIFT_VERSION}/${THRIFT_TAR}"
 

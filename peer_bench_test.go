@@ -24,7 +24,7 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/uber/tchannel-go"
+	"github.com/uber/tchannel-go"
 
 	"github.com/uber/tchannel-go/testutils"
 
@@ -32,7 +32,7 @@ import (
 )
 
 func benchmarkGetConnection(b *testing.B, numIncoming, numOutgoing int) {
-	ctx, cancel := NewContext(10 * time.Second)
+	ctx, cancel := tchannel.NewContext(10 * time.Second)
 	defer cancel()
 
 	s1 := testutils.NewServer(b, nil)

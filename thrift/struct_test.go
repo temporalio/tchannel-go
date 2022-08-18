@@ -27,7 +27,7 @@ import (
 	"sync"
 	"testing"
 
-	. "github.com/uber/tchannel-go/thrift"
+	tcthrift "github.com/uber/tchannel-go/thrift"
 
 	"github.com/uber/tchannel-go/testutils/testreader"
 	"github.com/uber/tchannel-go/testutils/testwriter"
@@ -98,7 +98,7 @@ func TestReadStruct(t *testing.T) {
 	for _, tt := range tests {
 		reader := bytes.NewReader(tt.encoded)
 		var s thrift.TStruct = &test.Data{}
-		err := ReadStruct(context.Background(), reader, s)
+		err := tcthrift.ReadStruct(context.Background(), reader, s)
 		assert.Equal(t, tt.wantErr, err != nil, "Unexpected error: %v", err)
 
 		// Even if there's an error, the struct will be partially filled.
@@ -122,7 +122,7 @@ func TestReadStructErr(t *testing.T) {
 	close(writer)
 
 	s := &test.Data{}
-	err := ReadStruct(context.Background(), reader, s)
+	err := tcthrift.ReadStruct(context.Background(), reader, s)
 	if assert.Error(t, err, "ReadStruct should fail") {
 		// Apache Thrift just prepends the error message, and doesn't give us access
 		// to the underlying error, so we can't check the underlying error exactly.
@@ -144,7 +144,7 @@ func TestWriteStruct(t *testing.T) {
 
 	for _, tt := range tests {
 		buf := &bytes.Buffer{}
-		err := WriteStruct(context.Background(), buf, tt.s)
+		err := tcthrift.WriteStruct(context.Background(), buf, tt.s)
 		assert.Equal(t, tt.wantErr, err != nil, "Unexpected err: %v", err)
 		if err != nil {
 			continue
@@ -156,7 +156,7 @@ func TestWriteStruct(t *testing.T) {
 
 func TestWriteStructErr(t *testing.T) {
 	writer := testwriter.Limited(10)
-	err := WriteStruct(context.Background(), writer, structTest.s)
+	err := tcthrift.WriteStruct(context.Background(), writer, structTest.s)
 	if assert.Error(t, err, "WriteStruct should fail") {
 		// Apache Thrift just prepends the error message, and doesn't give us access
 		// to the underlying error, so we can't check the underlying error exactly.
@@ -184,7 +184,7 @@ func BenchmarkWriteStruct(b *testing.B) {
 	buf := &bytes.Buffer{}
 	for i := 0; i < b.N; i++ {
 		buf.Reset()
-		WriteStruct(context.Background(), buf, structTest.s)
+		tcthrift.WriteStruct(context.Background(), buf, structTest.s)
 	}
 }
 
@@ -193,10 +193,10 @@ func BenchmarkReadStruct(b *testing.B) {
 	var d test.Data
 
 	buf.Seek(0, 0)
-	assert.NoError(b, ReadStruct(context.Background(), buf, &d))
+	assert.NoError(b, tcthrift.ReadStruct(context.Background(), buf, &d))
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		buf.Seek(0, 0)
-		ReadStruct(context.Background(), buf, &d)
+		tcthrift.ReadStruct(context.Background(), buf, &d)
 	}
 }

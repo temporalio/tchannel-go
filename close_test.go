@@ -26,7 +26,7 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/uber/tchannel-go"
+	"github.com/uber/tchannel-go"
 	"github.com/uber/tchannel-go/raw"
 	"github.com/uber/tchannel-go/testutils"
 	"github.com/uber/tchannel-go/testutils/goroutines"
@@ -43,16 +43,16 @@ type channelState struct {
 	closed     bool
 }
 
-func makeCall(client *Channel, server *testutils.TestServer) error {
-	ctx, cancel := NewContext(time.Second)
+func makeCall(client *tchannel.Channel, server *testutils.TestServer) error {
+	ctx, cancel := tchannel.NewContext(time.Second)
 	defer cancel()
 
 	_, _, _, err := raw.Call(ctx, client, server.HostPort(), server.ServiceName(), "test", nil, nil)
 	return err
 }
 
-func assertStateChangesTo(t testing.TB, ch *Channel, state ChannelState) {
-	var lastState ChannelState
+func assertStateChangesTo(t testing.TB, ch *tchannel.Channel, state tchannel.ChannelState) {
+	var lastState tchannel.ChannelState
 	require.True(t, testutils.WaitFor(time.Second, func() bool {
 		lastState = ch.State()
 		return lastState == state
@@ -64,7 +64,7 @@ func TestCloseOnlyListening(t *testing.T) {
 
 	// If there are no connections, then the channel should close immediately.
 	ch.Close()
-	assert.Equal(t, ChannelClosed, ch.State())
+	assert.Equal(t, tchannel.ChannelClosed, ch.State())
 	assert.True(t, ch.Closed(), "Channel should be closed")
 }
 
@@ -73,11 +73,11 @@ func TestCloseNewClient(t *testing.T) {
 
 	// If there are no connections, then the channel should close immediately.
 	ch.Close()
-	assert.Equal(t, ChannelClosed, ch.State())
+	assert.Equal(t, tchannel.ChannelClosed, ch.State())
 	assert.True(t, ch.Closed(), "Channel should be closed")
 }
 
-func ignoreError(h *testHandler) Handler {
+func ignoreError(h *testHandler) tchannel.Handler {
 	return raw.Wrap(onErrorTestHandler{
 		testHandler: h,
 		onError:     func(_ context.Context, err error) {},
@@ -93,17 +93,17 @@ func TestCloseAfterTimeout(t *testing.T) {
 		testHandler := newTestHandler(t)
 		ts.Register(ignoreError(testHandler), "block")
 
-		ctx, cancel := NewContext(100 * time.Millisecond)
+		ctx, cancel := tchannel.NewContext(100 * time.Millisecond)
 		defer cancel()
 
 		// Make a call, wait for it to timeout.
 		clientCh := ts.NewClient(nil)
 		_, _, _, err := raw.Call(ctx, clientCh, ts.HostPort(), ts.ServiceName(), "block", nil, nil)
-		require.Equal(t, ErrTimeout, err, "Expected call to timeout")
+		require.Equal(t, tchannel.ErrTimeout, err, "Expected call to timeout")
 
 		// The client channel should also close immediately.
 		clientCh.Close()
-		assertStateChangesTo(t, clientCh, ChannelClosed)
+		assertStateChangesTo(t, clientCh, tchannel.ChannelClosed)
 		assert.True(t, clientCh.Closed(), "Channel should be closed")
 	})
 }
@@ -128,12 +128,12 @@ func TestRelayCloseTimeout(t *testing.T) {
 
 		// Start a call in the background, since it will block
 		go func() {
-			ctx, cancel := NewContext(10 * time.Second)
+			ctx, cancel := tchannel.NewContext(10 * time.Second)
 			defer cancel()
 
 			_, _, _, err := raw.Call(ctx, clientCh, ts.HostPort(), ts.ServiceName(), "echo", nil, nil)
 			require.Error(t, err)
-			assert.Equal(t, ErrCodeNetwork, GetSystemErrorCode(err),
+			assert.Equal(t, tchannel.ErrCodeNetwork, tchannel.GetSystemErrorCode(err),
 				"expect network error from relay closing connection on timeout")
 		}()
 
@@ -148,7 +148,7 @@ func TestRelayCloseTimeout(t *testing.T) {
 func TestRaceExchangesWithClose(t *testing.T) {
 	var wg sync.WaitGroup
 
-	ctx, cancel := NewContext(testutils.Timeout(70 * time.Millisecond))
+	ctx, cancel := tchannel.NewContext(testutils.Timeout(70 * time.Millisecond))
 	defer cancel()
 
 	opts := testutils.NewOpts().DisableLogVerification()
@@ -205,7 +205,7 @@ func TestRaceExchangesWithClose(t *testing.T) {
 		// Now try to close the channel, it should block since there's active exchanges.
 		server.Close()
 		closed.Store(true)
-		assert.Equal(t, ChannelStartClose, ts.Server().State(), "Server should be in StartClose")
+		assert.Equal(t, tchannel.ChannelStartClose, ts.Server().State(), "Server should be in StartClose")
 		closed.Store(true)
 
 		close(completeCall)
@@ -319,7 +319,7 @@ type closeSemanticsTest struct {
 	isolated bool
 }
 
-func (t *closeSemanticsTest) makeServer(name string) (*Channel, chan struct{}) {
+func (t *closeSemanticsTest) makeServer(name string) (*tchannel.Channel, chan struct{}) {
 	ch := testutils.NewServer(t.T, &testutils.ChannelOpts{ServiceName: name})
 
 	c := make(chan struct{})
@@ -333,19 +333,19 @@ func (t *closeSemanticsTest) makeServer(name string) (*Channel, chan struct{}) {
 	return ch, c
 }
 
-func (t *closeSemanticsTest) withNewClient(f func(ch *Channel)) {
+func (t *closeSemanticsTest) withNewClient(f func(ch *tchannel.Channel)) {
 	ch := testutils.NewClient(t.T, &testutils.ChannelOpts{ServiceName: "client"})
 	f(ch)
 	ch.Close()
 }
 
-func (t *closeSemanticsTest) startCall(from *Channel, to *Channel, method string) (*OutboundCall, error) {
-	ctx, _ := NewContext(time.Second)
-	var call *OutboundCall
+func (t *closeSemanticsTest) startCall(from *tchannel.Channel, to *tchannel.Channel, method string) (*tchannel.OutboundCall, error) {
+	ctx, _ := tchannel.NewContext(time.Second)
+	var call *tchannel.OutboundCall
 	var err error
 	toPeer := to.PeerInfo()
 	if t.isolated {
-		sc := from.GetSubChannel(toPeer.ServiceName, Isolated)
+		sc := from.GetSubChannel(toPeer.ServiceName, tchannel.Isolated)
 		sc.Peers().Add(toPeer.HostPort)
 		call, err = sc.BeginCall(ctx, method, nil)
 	} else {
@@ -354,7 +354,7 @@ func (t *closeSemanticsTest) startCall(from *Channel, to *Channel, method string
 	return call, err
 }
 
-func (t *closeSemanticsTest) call(from *Channel, to *Channel) error {
+func (t *closeSemanticsTest) call(from *tchannel.Channel, to *tchannel.Channel) error {
 	call, err := t.startCall(from, to, "call")
 	if err == nil {
 		_, _, _, err = raw.WriteArgs(call, nil, nil)
@@ -362,18 +362,18 @@ func (t *closeSemanticsTest) call(from *Channel, to *Channel) error {
 	return err
 }
 
-func (t *closeSemanticsTest) callStream(from *Channel, to *Channel) <-chan struct{} {
+func (t *closeSemanticsTest) callStream(from *tchannel.Channel, to *tchannel.Channel) <-chan struct{} {
 	c := make(chan struct{})
 
 	call, err := t.startCall(from, to, "stream")
 	require.NoError(t, err, "stream call failed to start")
-	require.NoError(t, NewArgWriter(call.Arg2Writer()).Write(nil), "write arg2")
-	require.NoError(t, NewArgWriter(call.Arg3Writer()).Write(nil), "write arg3")
+	require.NoError(t, tchannel.NewArgWriter(call.Arg2Writer()).Write(nil), "write arg2")
+	require.NoError(t, tchannel.NewArgWriter(call.Arg3Writer()).Write(nil), "write arg3")
 
 	go func() {
 		var d []byte
-		assert.NoError(t, NewArgReader(call.Response().Arg2Reader()).Read(&d), "read arg2 from %v to %v", from.PeerInfo(), to.PeerInfo())
-		assert.NoError(t, NewArgReader(call.Response().Arg3Reader()).Read(&d), "read arg3")
+		assert.NoError(t, tchannel.NewArgReader(call.Response().Arg2Reader()).Read(&d), "read arg2 from %v to %v", from.PeerInfo(), to.PeerInfo())
+		assert.NoError(t, tchannel.NewArgReader(call.Response().Arg3Reader()).Read(&d), "read arg3")
 		c <- struct{}{}
 	}()
 
@@ -389,7 +389,7 @@ func (t *closeSemanticsTest) runTest() {
 	call2 := t.callStream(s2, s1)
 
 	// s1 and s2 are both open, so calls to it should be successful.
-	t.withNewClient(func(ch *Channel) {
+	t.withNewClient(func(ch *tchannel.Channel) {
 		require.NoError(t, t.call(ch, s1), "failed to call s1")
 		require.NoError(t, t.call(ch, s2), "failed to call s2")
 	})
@@ -398,9 +398,9 @@ func (t *closeSemanticsTest) runTest() {
 
 	// Close s1, should no longer be able to call it.
 	s1.Close()
-	assert.Equal(t, ChannelStartClose, s1.State())
+	assert.Equal(t, tchannel.ChannelStartClose, s1.State())
 
-	t.withNewClient(func(ch *Channel) {
+	t.withNewClient(func(ch *tchannel.Channel) {
 		assert.Error(t, t.call(ch, s1), "closed channel should not accept incoming calls")
 		require.NoError(t, t.call(ch, s2),
 			"closed channel with pending incoming calls should allow outgoing calls")
@@ -408,7 +408,7 @@ func (t *closeSemanticsTest) runTest() {
 
 	// Even an existing connection (e.g. from s2) should fail.
 	// TODO: this will fail until the peer is shared.
-	if !assert.Equal(t, ErrChannelClosed, t.call(s2, s1),
+	if !assert.Equal(t, tchannel.ErrChannelClosed, t.call(s2, s1),
 		"closed channel should not accept incoming calls") {
 		t.Errorf("err %v", t.call(s2, s1))
 	}
@@ -419,14 +419,14 @@ func (t *closeSemanticsTest) runTest() {
 	// Once the incoming connection is drained, outgoing calls should fail.
 	s1C <- struct{}{}
 	<-call2
-	assertStateChangesTo(t.T, s1, ChannelInboundClosed)
+	assertStateChangesTo(t.T, s1, tchannel.ChannelInboundClosed)
 	require.Error(t, t.call(s1, s2),
 		"closed channel with no pending incoming calls should not allow outgoing calls")
 
 	// Now the channel should be completely closed as there are no pending connections.
 	s2C <- struct{}{}
 	<-call1
-	assertStateChangesTo(t.T, s1, ChannelClosed)
+	assertStateChangesTo(t.T, s1, tchannel.ChannelClosed)
 
 	// Close s2 so we don't leave any goroutines running.
 	s2.Close()
@@ -470,7 +470,7 @@ func TestCloseSingleChannel(t *testing.T) {
 		connected.Add(1)
 		completed.Add(1)
 		go func() {
-			ctx, cancel := NewContext(time.Second)
+			ctx, cancel := tchannel.NewContext(time.Second)
 			defer cancel()
 
 			peerInfo := ch.PeerInfo()
@@ -489,7 +489,7 @@ func TestCloseSingleChannel(t *testing.T) {
 	completed.Wait()
 
 	// Once all calls are complete, the channel should be closed.
-	assertStateChangesTo(t, ch, ChannelClosed)
+	assertStateChangesTo(t, ch, tchannel.ChannelClosed)
 	goroutines.VerifyNoLeaks(t, nil)
 }
 
@@ -510,7 +510,7 @@ func TestCloseOneSide(t *testing.T) {
 	})
 
 	go func() {
-		ctx, cancel := NewContext(time.Second)
+		ctx, cancel := tchannel.NewContext(time.Second)
 		defer cancel()
 		ch2Peer := ch2.PeerInfo()
 		_, _, _, err := raw.Call(ctx, ch1, ch2Peer.HostPort, ch2Peer.ServiceName, "echo", nil, nil)
@@ -527,7 +527,7 @@ func TestCloseOneSide(t *testing.T) {
 	<-completed
 
 	// Once the call completes, the channel should be closed.
-	assertStateChangesTo(t, ch1, ChannelClosed)
+	assertStateChangesTo(t, ch1, tchannel.ChannelClosed)
 
 	// We need to close all open TChannels before verifying blocked goroutines.
 	ch2.Close()

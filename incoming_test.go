@@ -24,7 +24,7 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/uber/tchannel-go"
+	"github.com/uber/tchannel-go"
 
 	"github.com/uber/tchannel-go/testutils"
 
@@ -32,21 +32,21 @@ import (
 )
 
 func TestPeersIncomingConnection(t *testing.T) {
-	newService := func(svcName string) (*Channel, string) {
+	newService := func(svcName string) (*tchannel.Channel, string) {
 		ch, _, hostPort := NewServer(t, &testutils.ChannelOpts{ServiceName: svcName})
 		return ch, hostPort
 	}
 
 	opts := testutils.NewOpts().NoRelay()
-	WithVerifiedServer(t, opts, func(ch *Channel, hostPort string) {
-		doPing := func(ch *Channel) {
-			ctx, cancel := NewContext(time.Second)
+	WithVerifiedServer(t, opts, func(ch *tchannel.Channel, hostPort string) {
+		doPing := func(ch *tchannel.Channel) {
+			ctx, cancel := tchannel.NewContext(time.Second)
 			defer cancel()
 			assert.NoError(t, ch.Ping(ctx, hostPort), "Ping failed")
 		}
 
 		hyperbahnSC := ch.GetSubChannel("hyperbahn")
-		ringpopSC := ch.GetSubChannel("ringpop", Isolated)
+		ringpopSC := ch.GetSubChannel("ringpop", tchannel.Isolated)
 
 		hyperbahn, hyperbahnHostPort := newService("hyperbahn")
 		defer hyperbahn.Close()
@@ -61,9 +61,9 @@ func TestPeersIncomingConnection(t *testing.T) {
 		assert.NotNil(t, rootPeers[hyperbahnHostPort], "missing hyperbahn peer")
 		assert.NotNil(t, rootPeers[ringpopHostPort], "missing ringpop peer")
 
-		for _, sc := range []Registrar{ch, hyperbahnSC, ringpopSC} {
+		for _, sc := range []tchannel.Registrar{ch, hyperbahnSC, ringpopSC} {
 			_, err := sc.Peers().Get(nil)
-			assert.Equal(t, ErrNoPeers, err,
+			assert.Equal(t, tchannel.ErrNoPeers, err,
 				"incoming connections should not be added to non-root peer list")
 		}
 
@@ -72,7 +72,7 @@ func TestPeersIncomingConnection(t *testing.T) {
 		serverHostPort := ch.PeerInfo().HostPort
 
 		assert.Equal(t, len(serverState), 2, "Incorrect peer count")
-		for _, client := range []*Channel{ringpop, hyperbahn} {
+		for _, client := range []*tchannel.Channel{ringpop, hyperbahn} {
 			clientPeerState := client.IntrospectState(nil).RootPeers
 			clientHostPort := client.PeerInfo().HostPort
 			assert.Equal(t, len(clientPeerState), 1, "Incorrect peer count")

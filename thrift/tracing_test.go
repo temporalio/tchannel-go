@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/uber/tchannel-go"
-	. "github.com/uber/tchannel-go/testutils/testtracing"
+	"github.com/uber/tchannel-go/testutils/testtracing"
 	"github.com/uber/tchannel-go/thrift"
 	gen "github.com/uber/tchannel-go/thrift/gen-go/test"
 
@@ -15,31 +15,31 @@ import (
 // ThriftHandler tests tracing over Thrift encoding
 type ThriftHandler struct {
 	gen.TChanSimpleService // leave nil so calls to unimplemented methods panic.
-	TraceHandler
+	testtracing.TraceHandler
 
 	thriftClient gen.TChanSimpleService
 	t            *testing.T
 }
 
-func requestFromThrift(req *gen.Data) *TracingRequest {
-	r := new(TracingRequest)
+func requestFromThrift(req *gen.Data) *testtracing.TracingRequest {
+	r := new(testtracing.TracingRequest)
 	r.ForwardCount = int(req.I3)
 	return r
 }
 
-func requestToThrift(r *TracingRequest) *gen.Data {
+func requestToThrift(r *testtracing.TracingRequest) *gen.Data {
 	return &gen.Data{I3: int32(r.ForwardCount)}
 }
 
-func responseFromThrift(t *testing.T, res *gen.Data) (*TracingResponse, error) {
-	var r TracingResponse
+func responseFromThrift(t *testing.T, res *gen.Data) (*testtracing.TracingResponse, error) {
+	var r testtracing.TracingResponse
 	if err := json_encoding.Unmarshal([]byte(res.S2), &r); err != nil {
 		return nil, err
 	}
 	return &r, nil
 }
 
-func responseToThrift(t *testing.T, r *TracingResponse) (*gen.Data, error) {
+func responseToThrift(t *testing.T, r *testtracing.TracingResponse) (*gen.Data, error) {
 	jsonBytes, err := json_encoding.Marshal(r)
 	if err != nil {
 		return nil, err
@@ -50,7 +50,7 @@ func responseToThrift(t *testing.T, r *TracingResponse) (*gen.Data, error) {
 func (h *ThriftHandler) Call(ctx thrift.Context, arg *gen.Data) (*gen.Data, error) {
 	req := requestFromThrift(arg)
 	res, err := h.HandleCall(ctx, req,
-		func(ctx context.Context, req *TracingRequest) (*TracingResponse, error) {
+		func(ctx context.Context, req *testtracing.TracingRequest) (*testtracing.TracingResponse, error) {
 			tctx := ctx.(thrift.Context)
 			res, err := h.thriftClient.Call(tctx, requestToThrift(req))
 			if err != nil {
@@ -64,7 +64,7 @@ func (h *ThriftHandler) Call(ctx thrift.Context, arg *gen.Data) (*gen.Data, erro
 	return responseToThrift(h.t, res)
 }
 
-func (h *ThriftHandler) firstCall(ctx context.Context, req *TracingRequest) (*TracingResponse, error) {
+func (h *ThriftHandler) firstCall(ctx context.Context, req *testtracing.TracingRequest) (*testtracing.TracingResponse, error) {
 	tctx := thrift.Wrap(ctx)
 	res, err := h.thriftClient.Call(tctx, requestToThrift(req))
 	if err != nil {
@@ -74,13 +74,13 @@ func (h *ThriftHandler) firstCall(ctx context.Context, req *TracingRequest) (*Tr
 }
 
 func TestThriftTracingPropagation(t *testing.T) {
-	suite := &PropagationTestSuite{
-		Encoding: EncodingInfo{Format: tchannel.Thrift, HeadersSupported: true},
-		Register: func(t *testing.T, ch *tchannel.Channel) TracingCall {
+	suite := &testtracing.PropagationTestSuite{
+		Encoding: testtracing.EncodingInfo{Format: tchannel.Thrift, HeadersSupported: true},
+		Register: func(t *testing.T, ch *tchannel.Channel) testtracing.TracingCall {
 			opts := &thrift.ClientOptions{HostPort: ch.PeerInfo().HostPort}
 			thriftClient := thrift.NewClient(ch, ch.PeerInfo().ServiceName, opts)
 			handler := &ThriftHandler{
-				TraceHandler: TraceHandler{Ch: ch},
+				TraceHandler: testtracing.TraceHandler{Ch: ch},
 				t:            t,
 				thriftClient: gen.NewTChanSimpleServiceClient(thriftClient),
 			}
@@ -91,18 +91,18 @@ func TestThriftTracingPropagation(t *testing.T) {
 
 			return handler.firstCall
 		},
-		TestCases: map[TracerType][]PropagationTestCase{
-			Noop: {
+		TestCases: map[testtracing.TracerType][]testtracing.PropagationTestCase{
+			testtracing.Noop: {
 				{ForwardCount: 2, TracingDisabled: true, ExpectedBaggage: "", ExpectedSpanCount: 0},
 				{ForwardCount: 2, TracingDisabled: false, ExpectedBaggage: "", ExpectedSpanCount: 0},
 			},
-			Mock: {
-				{ForwardCount: 2, TracingDisabled: true, ExpectedBaggage: BaggageValue, ExpectedSpanCount: 0},
-				{ForwardCount: 2, TracingDisabled: false, ExpectedBaggage: BaggageValue, ExpectedSpanCount: 6},
+			testtracing.Mock: {
+				{ForwardCount: 2, TracingDisabled: true, ExpectedBaggage: testtracing.BaggageValue, ExpectedSpanCount: 0},
+				{ForwardCount: 2, TracingDisabled: false, ExpectedBaggage: testtracing.BaggageValue, ExpectedSpanCount: 6},
 			},
-			Jaeger: {
-				{ForwardCount: 2, TracingDisabled: true, ExpectedBaggage: BaggageValue, ExpectedSpanCount: 0},
-				{ForwardCount: 2, TracingDisabled: false, ExpectedBaggage: BaggageValue, ExpectedSpanCount: 6},
+			testtracing.Jaeger: {
+				{ForwardCount: 2, TracingDisabled: true, ExpectedBaggage: testtracing.BaggageValue, ExpectedSpanCount: 0},
+				{ForwardCount: 2, TracingDisabled: false, ExpectedBaggage: testtracing.BaggageValue, ExpectedSpanCount: 6},
 			},
 		},
 	}

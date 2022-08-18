@@ -26,7 +26,7 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/uber/tchannel-go"
+	"github.com/uber/tchannel-go"
 
 	"github.com/uber/tchannel-go/raw"
 	"github.com/uber/tchannel-go/testutils"
@@ -47,11 +47,11 @@ func newPeerStatusListener() *peerStatusListener {
 	}
 }
 
-func (pl *peerStatusListener) onStatusChange(p *Peer) {
+func (pl *peerStatusListener) onStatusChange(p *tchannel.Peer) {
 	pl.changes <- struct{}{}
 }
 
-func (pl *peerStatusListener) waitForZeroConnections(t testing.TB, channels ...*Channel) bool {
+func (pl *peerStatusListener) waitForZeroConnections(t testing.TB, channels ...*tchannel.Channel) bool {
 	for {
 		select {
 		case <-pl.changes:
@@ -66,7 +66,7 @@ func (pl *peerStatusListener) waitForZeroConnections(t testing.TB, channels ...*
 	}
 }
 
-func allConnectionsClosed(channels []*Channel) bool {
+func allConnectionsClosed(channels []*tchannel.Channel) bool {
 	for _, ch := range channels {
 		if numConnections(ch) != 0 {
 			return false
@@ -76,7 +76,7 @@ func allConnectionsClosed(channels []*Channel) bool {
 	return true
 }
 
-func numConnections(ch *Channel) int {
+func numConnections(ch *tchannel.Channel) int {
 	rootPeers := ch.RootPeers().Copy()
 	count := 0
 
@@ -88,7 +88,7 @@ func numConnections(ch *Channel) int {
 	return count
 }
 
-func connectionStatus(channels []*Channel) string {
+func connectionStatus(channels []*tchannel.Channel) string {
 	status := make([]string, 0)
 	for _, ch := range channels {
 		status = append(status,
@@ -100,7 +100,7 @@ func connectionStatus(channels []*Channel) string {
 // Validates that inbound idle connections are dropped.
 func TestServerBasedSweep(t *testing.T) {
 	listener := newPeerStatusListener()
-	ctx, cancel := NewContext(time.Second)
+	ctx, cancel := tchannel.NewContext(time.Second)
 	defer cancel()
 
 	serverTicker := testutils.NewFakeTicker()
@@ -143,7 +143,7 @@ func TestServerBasedSweep(t *testing.T) {
 // Validates that outbound idle connections are dropped.
 func TestClientBasedSweep(t *testing.T) {
 	listener := newPeerStatusListener()
-	ctx, cancel := NewContext(time.Second)
+	ctx, cancel := tchannel.NewContext(time.Second)
 	defer cancel()
 
 	clientTicker := testutils.NewFakeTicker()
@@ -224,7 +224,7 @@ func TestRelayBasedSweep(t *testing.T) {
 // Validates that pings do not keep the connection alive.
 func TestIdleSweepWithPings(t *testing.T) {
 	listener := newPeerStatusListener()
-	ctx, cancel := NewContext(time.Second)
+	ctx, cancel := tchannel.NewContext(time.Second)
 	defer cancel()
 
 	clientTicker := testutils.NewFakeTicker()
@@ -268,7 +268,7 @@ func TestIdleSweepWithPings(t *testing.T) {
 
 // Validates that when MaxIdleTime isn't set, NewChannel returns an error.
 func TestIdleSweepMisconfiguration(t *testing.T) {
-	ch, err := NewChannel("svc", &ChannelOptions{
+	ch, err := tchannel.NewChannel("svc", &tchannel.ChannelOptions{
 		IdleCheckInterval: time.Duration(30 * time.Second),
 	})
 
@@ -277,7 +277,7 @@ func TestIdleSweepMisconfiguration(t *testing.T) {
 }
 
 func TestIdleSweepIgnoresConnectionsWithCalls(t *testing.T) {
-	ctx, cancel := NewContext(time.Second)
+	ctx, cancel := tchannel.NewContext(time.Second)
 	defer cancel()
 
 	clientTicker := testutils.NewFakeTicker()
@@ -322,7 +322,7 @@ func TestIdleSweepIgnoresConnectionsWithCalls(t *testing.T) {
 		// If we are in no-relay mode, we expect 2 connections to the server (from each client).
 		// If we are in relay mode, the relay will have the 2 connections from clients + 1 connection to the server.
 		check := struct {
-			ch            *Channel
+			ch            *tchannel.Channel
 			preCloseConns int
 			tick          func()
 		}{

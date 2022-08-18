@@ -28,9 +28,10 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/uber/tchannel-go"
+	"github.com/uber/tchannel-go"
 
 	"github.com/stretchr/testify/assert"
+
 	"github.com/uber/tchannel-go/testutils"
 )
 
@@ -44,7 +45,7 @@ func TestNetDialCancelContext(t *testing.T) {
 	defer client.Close()
 
 	started := time.Now()
-	ctx, cancel := NewContext(time.Minute)
+	ctx, cancel := tchannel.NewContext(time.Minute)
 
 	go func() {
 		time.Sleep(timeoutPeriod)
@@ -61,6 +62,6 @@ func TestNetDialCancelContext(t *testing.T) {
 	}
 
 	d := time.Since(started)
-	assert.Equal(t, ErrCodeCancelled, GetSystemErrorCode(err), "Ping expected to fail with context cancelled")
+	assert.Equal(t, tchannel.ErrCodeCancelled, tchannel.GetSystemErrorCode(err), "Ping expected to fail with context cancelled")
 	assert.True(t, d < 2*timeoutPeriod, "Timeout should take less than %v, took %v", 2*timeoutPeriod, d)
 }

@@ -25,7 +25,7 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/uber/tchannel-go"
+	"github.com/uber/tchannel-go"
 
 	"github.com/uber/tchannel-go/testutils"
 
@@ -38,7 +38,7 @@ func TestHealthCheckStopBeforeStart(t *testing.T) {
 	testutils.WithTestServer(t, opts, func(t testing.TB, ts *testutils.TestServer) {
 
 		var pingCount int
-		frameRelay, cancel := testutils.FrameRelay(t, ts.HostPort(), func(outgoing bool, f *Frame) *Frame {
+		frameRelay, cancel := testutils.FrameRelay(t, ts.HostPort(), func(outgoing bool, f *tchannel.Frame) *tchannel.Frame {
 			if strings.Contains(f.Header.String(), "PingRes") {
 				pingCount++
 			}
@@ -49,10 +49,10 @@ func TestHealthCheckStopBeforeStart(t *testing.T) {
 		ft := testutils.NewFakeTicker()
 		opts := testutils.NewOpts().
 			SetTimeTicker(ft.New).
-			SetHealthChecks(HealthCheckOptions{Interval: time.Second})
+			SetHealthChecks(tchannel.HealthCheckOptions{Interval: time.Second})
 		client := ts.NewClient(opts)
 
-		ctx, cancel := NewContext(time.Second)
+		ctx, cancel := tchannel.NewContext(time.Second)
 		defer cancel()
 
 		conn, err := client.RootPeers().GetOrAdd(frameRelay).GetConnection(ctx)
@@ -73,7 +73,7 @@ func TestHealthCheckStopNoError(t *testing.T) {
 	testutils.WithTestServer(t, opts, func(t testing.TB, ts *testutils.TestServer) {
 
 		var pingCount int
-		frameRelay, cancel := testutils.FrameRelay(t, ts.HostPort(), func(outgoing bool, f *Frame) *Frame {
+		frameRelay, cancel := testutils.FrameRelay(t, ts.HostPort(), func(outgoing bool, f *tchannel.Frame) *tchannel.Frame {
 			if strings.Contains(f.Header.String(), "PingRes") {
 				pingCount++
 			}
@@ -84,11 +84,11 @@ func TestHealthCheckStopNoError(t *testing.T) {
 		ft := testutils.NewFakeTicker()
 		opts := testutils.NewOpts().
 			SetTimeTicker(ft.New).
-			SetHealthChecks(HealthCheckOptions{Interval: time.Second}).
+			SetHealthChecks(tchannel.HealthCheckOptions{Interval: time.Second}).
 			AddLogFilter("Unexpected ping response.", 1)
 		client := ts.NewClient(opts)
 
-		ctx, cancel := NewContext(time.Second)
+		ctx, cancel := tchannel.NewContext(time.Second)
 		defer cancel()
 
 		conn, err := client.RootPeers().GetOrAdd(frameRelay).GetConnection(ctx)
@@ -161,7 +161,7 @@ func TestHealthCheckIntegration(t *testing.T) {
 			opts := testutils.NewOpts().NoRelay()
 			testutils.WithTestServer(t, opts, func(t testing.TB, ts *testutils.TestServer) {
 				var pingCount int
-				frameRelay, cancel := testutils.FrameRelay(t, ts.HostPort(), func(outgoing bool, f *Frame) *Frame {
+				frameRelay, cancel := testutils.FrameRelay(t, ts.HostPort(), func(outgoing bool, f *tchannel.Frame) *tchannel.Frame {
 					if strings.Contains(f.Header.String(), "PingRes") {
 						success := tt.pingResponses[pingCount]
 						pingCount++
@@ -177,12 +177,12 @@ func TestHealthCheckIntegration(t *testing.T) {
 				ft := testutils.NewFakeTicker()
 				opts := testutils.NewOpts().
 					SetTimeTicker(ft.New).
-					SetHealthChecks(HealthCheckOptions{Interval: time.Second, FailuresToClose: tt.failuresToClose}).
+					SetHealthChecks(tchannel.HealthCheckOptions{Interval: time.Second, FailuresToClose: tt.failuresToClose}).
 					AddLogFilter("Failed active health check.", uint(tt.wantHealthCheckLogs)).
 					AddLogFilter("Unexpected ping response.", 1)
 				client := ts.NewClient(opts)
 
-				ctx, cancel := NewContext(time.Second)
+				ctx, cancel := tchannel.NewContext(time.Second)
 				defer cancel()
 
 				conn, err := client.RootPeers().GetOrAdd(frameRelay).GetConnection(ctx)
@@ -206,12 +206,12 @@ func TestHealthCheckIntegration(t *testing.T) {
 	}
 }
 
-func waitForNHealthChecks(t testing.TB, conn *Connection, n int) {
+func waitForNHealthChecks(t testing.TB, conn *tchannel.Connection, n int) {
 	require.True(t, testutils.WaitFor(time.Second, func() bool {
 		return len(introspectConn(conn).HealthChecks) >= n
 	}), "Failed while waiting for %v health checks", n)
 }
 
-func introspectConn(c *Connection) ConnectionRuntimeState {
-	return c.IntrospectState(&IntrospectionOptions{})
+func introspectConn(c *tchannel.Connection) tchannel.ConnectionRuntimeState {
+	return c.IntrospectState(&tchannel.IntrospectionOptions{})
 }

@@ -3,7 +3,7 @@ module github.com/uber/tchannel-go
 go 1.17
 
 require (
-	github.com/apache/thrift v0.15.0
+	github.com/apache/thrift v0.16.0
 	github.com/bmizerany/perks v0.0.0-20141205001514-d9a9656a3a4b
 	github.com/cactus/go-statsd-client/v4 v4.0.0
 	github.com/crossdock/crossdock-go v0.0.0-20160816171116-049aabb0122b

@@ -26,7 +26,7 @@ import (
 	"time"
 
 	// Test is in a separate package to avoid circular dependencies.
-	. "github.com/uber/tchannel-go/thrift"
+	tcthrift "github.com/uber/tchannel-go/thrift"
 
 	"github.com/uber/tchannel-go"
 	"github.com/uber/tchannel-go/raw"
@@ -47,14 +47,14 @@ func serializeStruct(t *testing.T, s thrift.TStruct) []byte {
 }
 
 func TestInvalidThriftBytes(t *testing.T) {
-	ctx, cancel := NewContext(time.Second)
+	ctx, cancel := tcthrift.NewContext(time.Second)
 	defer cancel()
 
 	ch := testutils.NewClient(t, nil)
 	sCh := testutils.NewServer(t, nil)
 	defer sCh.Close()
 
-	svr := NewServer(sCh)
+	svr := tcthrift.NewServer(sCh)
 	mock := new(mocks.TChanSecondService)
 	svr.Register(gen.NewTChanSecondServiceServer(mock))
 

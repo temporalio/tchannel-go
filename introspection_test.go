@@ -27,7 +27,7 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/uber/tchannel-go"
+	"github.com/uber/tchannel-go"
 	"github.com/uber/tchannel-go/json"
 	"github.com/uber/tchannel-go/testutils"
 
@@ -110,7 +110,7 @@ func TestIntrospectClosedConn(t *testing.T) {
 			<-blockEcho
 		})
 
-		ctx, cancel := NewContext(time.Second)
+		ctx, cancel := tchannel.NewContext(time.Second)
 		defer cancel()
 
 		assert.Equal(t, 0, ts.Server().IntrospectNumConnections(), "Expected no connection on new server")
@@ -150,7 +150,7 @@ func TestIntrospectClosedConn(t *testing.T) {
 func TestIntrospectionNotBlocked(t *testing.T) {
 	testutils.WithTestServer(t, nil, func(t testing.TB, ts *testutils.TestServer) {
 		subCh := ts.Server().GetSubChannel("tchannel")
-		subCh.SetHandler(HandlerFunc(func(ctx context.Context, inbound *InboundCall) {
+		subCh.SetHandler(tchannel.HandlerFunc(func(ctx context.Context, inbound *tchannel.InboundCall) {
 			panic("should not be called")
 		}))
 
@@ -159,7 +159,7 @@ func TestIntrospectionNotBlocked(t *testing.T) {
 			ts.RelayHost().Add("tchannel", ts.Server().PeerInfo().HostPort)
 		}
 
-		ctx, cancel := NewContext(time.Second)
+		ctx, cancel := tchannel.NewContext(time.Second)
 		defer cancel()
 
 		client := ts.NewClient(nil)
@@ -167,7 +167,7 @@ func TestIntrospectionNotBlocked(t *testing.T) {
 
 		// Ensure that SetHandler doesn't block introspection.
 		var resp interface{}
-		err := json.CallPeer(Wrap(ctx), peer, "tchannel", "_gometa_runtime", nil, &resp)
+		err := json.CallPeer(tchannel.Wrap(ctx), peer, "tchannel", "_gometa_runtime", nil, &resp)
 		require.NoError(t, err, "Call _gometa_runtime failed")
 	})
 }

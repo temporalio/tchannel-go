@@ -26,7 +26,7 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/uber/tchannel-go"
+	"github.com/uber/tchannel-go"
 
 	"github.com/uber/tchannel-go/raw"
 	"github.com/uber/tchannel-go/testutils"
@@ -36,7 +36,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-func tagsForOutboundCall(serverCh *Channel, clientCh *Channel, method string) map[string]string {
+func tagsForOutboundCall(serverCh *tchannel.Channel, clientCh *tchannel.Channel, method string) map[string]string {
 	host, _ := os.Hostname()
 	return map[string]string{
 		"app":             clientCh.PeerInfo().ProcessName,
@@ -47,7 +47,7 @@ func tagsForOutboundCall(serverCh *Channel, clientCh *Channel, method string) ma
 	}
 }
 
-func tagsForInboundCall(serverCh *Channel, clientCh *Channel, method string) map[string]string {
+func tagsForInboundCall(serverCh *tchannel.Channel, clientCh *tchannel.Channel, method string) map[string]string {
 	host, _ := os.Hostname()
 	return map[string]string{
 		"app":             serverCh.PeerInfo().ProcessName,
@@ -102,7 +102,7 @@ func TestStatsCalls(t *testing.T) {
 		serverOpts := testutils.NewOpts().
 			SetStatsReporter(serverStats).
 			SetTimeNow(serverClock.Now)
-		WithVerifiedServer(t, serverOpts, func(serverCh *Channel, hostPort string) {
+		WithVerifiedServer(t, serverOpts, func(serverCh *tchannel.Channel, hostPort string) {
 			handler := raw.Wrap(handler)
 			serverCh.Register(handler, "echo")
 			serverCh.Register(handler, "app-error")
@@ -112,7 +112,7 @@ func TestStatsCalls(t *testing.T) {
 				SetTimeNow(clientClock.Now))
 			defer ch.Close()
 
-			ctx, cancel := NewContext(time.Second * 5)
+			ctx, cancel := tchannel.NewContext(time.Second * 5)
 			defer cancel()
 
 			_, _, resp, err := raw.Call(ctx, ch, hostPort, testutils.DefaultServerName, tt.method, nil, nil)
@@ -156,12 +156,12 @@ func TestStatsWithRetries(t *testing.T) {
 		SetTimeNow(clientClock.Now))
 	defer ch.Close()
 
-	ctx, cancel := NewContext(time.Second)
+	ctx, cancel := tchannel.NewContext(time.Second)
 	defer cancel()
 
 	// TODO why do we need this??
 	opts := testutils.NewOpts().NoRelay()
-	WithVerifiedServer(t, opts, func(serverCh *Channel, hostPort string) {
+	WithVerifiedServer(t, opts, func(serverCh *tchannel.Channel, hostPort string) {
 		const (
 			perAttemptServer = 10 * time.Millisecond
 			perAttemptClient = time.Millisecond
@@ -203,7 +203,7 @@ func TestStatsWithRetries(t *testing.T) {
 			{
 				numFailures:         5,
 				numAttempts:         5,
-				expectErr:           ErrServerBusy,
+				expectErr:           tchannel.ErrServerBusy,
 				perAttemptLatencies: a(perAttemptServer, perAttemptServer, perAttemptServer, perAttemptServer, perAttemptServer),
 				overallLatency:      5 * perAttemptTotal,
 			},
@@ -211,18 +211,18 @@ func TestStatsWithRetries(t *testing.T) {
 
 		for _, tt := range tests {
 			clientStats.Reset()
-			err := ch.RunWithRetry(ctx, func(ctx context.Context, rs *RequestState) error {
+			err := ch.RunWithRetry(ctx, func(ctx context.Context, rs *tchannel.RequestState) error {
 				clientClock.Elapse(perAttemptClient)
 				if rs.Attempt > tt.numFailures {
 					respErr <- nil
 				} else {
-					respErr <- ErrServerBusy
+					respErr <- tchannel.ErrServerBusy
 				}
 
 				sc := ch.GetSubChannel(serverCh.ServiceName())
 				_, err := raw.CallV2(ctx, sc, raw.CArgs{
 					Method:      "req",
-					CallOptions: &CallOptions{RequestState: rs},
+					CallOptions: &tchannel.CallOptions{RequestState: rs},
 				})
 				return err
 			})

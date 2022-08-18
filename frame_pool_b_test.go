@@ -25,12 +25,12 @@ import (
 	"sync"
 	"testing"
 
-	. "github.com/uber/tchannel-go"
+	"github.com/uber/tchannel-go"
 
 	"go.uber.org/atomic"
 )
 
-func benchmarkUsing(b *testing.B, pool FramePool) {
+func benchmarkUsing(b *testing.B, pool tchannel.FramePool) {
 	const numGoroutines = 1000
 	const maxHoldFrames = 1000
 
@@ -49,7 +49,7 @@ func benchmarkUsing(b *testing.B, pool FramePool) {
 				framesToHold := rand.Intn(maxHoldFrames)
 				gotFrames.Add(uint64(framesToHold))
 
-				frames := make([]*Frame, framesToHold)
+				frames := make([]*tchannel.Frame, framesToHold)
 				for i := 0; i < framesToHold; i++ {
 					frames[i] = pool.Get()
 				}
@@ -67,17 +67,17 @@ func benchmarkUsing(b *testing.B, pool FramePool) {
 }
 
 func BenchmarkFramePoolDisabled(b *testing.B) {
-	benchmarkUsing(b, DisabledFramePool)
+	benchmarkUsing(b, tchannel.DisabledFramePool)
 }
 
 func BenchmarkFramePoolSync(b *testing.B) {
-	benchmarkUsing(b, NewSyncFramePool())
+	benchmarkUsing(b, tchannel.NewSyncFramePool())
 }
 
 func BenchmarkFramePoolChannel1000(b *testing.B) {
-	benchmarkUsing(b, NewChannelFramePool(1000))
+	benchmarkUsing(b, tchannel.NewChannelFramePool(1000))
 }
 
 func BenchmarkFramePoolChannel10000(b *testing.B) {
-	benchmarkUsing(b, NewChannelFramePool(10000))
+	benchmarkUsing(b, tchannel.NewChannelFramePool(10000))
 }

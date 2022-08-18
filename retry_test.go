@@ -25,7 +25,7 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/uber/tchannel-go"
+	"github.com/uber/tchannel-go"
 
 	"github.com/uber/tchannel-go/testutils"
 
@@ -34,9 +34,9 @@ import (
 	"golang.org/x/net/context"
 )
 
-func createFuncToRetry(t *testing.T, errors ...error) (RetriableFunc, *int) {
+func createFuncToRetry(t *testing.T, errors ...error) (tchannel.RetriableFunc, *int) {
 	i := 0
-	return func(_ context.Context, rs *RequestState) error {
+	return func(_ context.Context, rs *tchannel.RequestState) error {
 		defer func() { i++ }()
 		if i >= len(errors) {
 			t.Fatalf("Retry function has no error to return for this call")
@@ -63,14 +63,14 @@ type testErrors struct {
 
 func getTestErrors() testErrors {
 	errs := testErrors{
-		Busy:       ErrServerBusy,
-		Declined:   ErrChannelClosed,
-		Timeout:    ErrTimeout,
-		Network:    NewSystemError(ErrCodeNetwork, "fake network error"),
+		Busy:       tchannel.ErrServerBusy,
+		Declined:   tchannel.ErrChannelClosed,
+		Timeout:    tchannel.ErrTimeout,
+		Network:    tchannel.NewSystemError(tchannel.ErrCodeNetwork, "fake network error"),
 		Connection: net.UnknownNetworkError("fake connection error"),
-		BadRequest: ErrTimeoutRequired,
-		Unexpected: NewSystemError(ErrCodeUnexpected, "fake unexpected error"),
-		Cancelled:  NewSystemError(ErrCodeCancelled, "fake cancelled error"),
+		BadRequest: tchannel.ErrTimeoutRequired,
+		Unexpected: tchannel.NewSystemError(tchannel.ErrCodeUnexpected, "fake unexpected error"),
+		Cancelled:  tchannel.NewSystemError(tchannel.ErrCodeCancelled, "fake cancelled error"),
 	}
 	errs.all = []error{errs.Busy, errs.Declined, errs.Timeout, errs.Network, errs.Connection,
 		errs.BadRequest, errs.Unexpected, errs.Cancelled}
@@ -80,15 +80,15 @@ func getTestErrors() testErrors {
 func TestCanRetry(t *testing.T) {
 	e := getTestErrors()
 	tests := []struct {
-		RetryOn RetryOn
+		RetryOn tchannel.RetryOn
 		RetryOK []error
 	}{
-		{RetryNever, nil},
-		{RetryDefault, []error{e.Busy, e.Declined, e.Network, e.Connection}},
-		{RetryConnectionError, []error{e.Busy, e.Declined, e.Network, e.Connection}},
-		{RetryNonIdempotent, []error{e.Busy, e.Declined}},
-		{RetryUnexpected, []error{e.Busy, e.Declined, e.Unexpected}},
-		{RetryIdempotent, []error{e.Busy, e.Declined, e.Timeout, e.Network, e.Connection, e.Unexpected, e.Cancelled}},
+		{tchannel.RetryNever, nil},
+		{tchannel.RetryDefault, []error{e.Busy, e.Declined, e.Network, e.Connection}},
+		{tchannel.RetryConnectionError, []error{e.Busy, e.Declined, e.Network, e.Connection}},
+		{tchannel.RetryNonIdempotent, []error{e.Busy, e.Declined}},
+		{tchannel.RetryUnexpected, []error{e.Busy, e.Declined, e.Unexpected}},
+		{tchannel.RetryIdempotent, []error{e.Busy, e.Declined, e.Timeout, e.Network, e.Connection, e.Unexpected, e.Cancelled}},
 	}
 
 	for _, tt := range tests {
@@ -110,9 +110,9 @@ func TestNoRetry(t *testing.T) {
 	defer ch.Close()
 
 	e := getTestErrors()
-	retryOpts := &RetryOptions{RetryOn: RetryNever}
+	retryOpts := &tchannel.RetryOptions{RetryOn: tchannel.RetryNever}
 	for _, fErr := range e.all {
-		ctx, cancel := NewContextBuilder(time.Second).SetRetryOptions(retryOpts).Build()
+		ctx, cancel := tchannel.NewContextBuilder(time.Second).SetRetryOptions(retryOpts).Build()
 		defer cancel()
 
 		f, counter := createFuncToRetry(t, fErr)
@@ -126,10 +126,10 @@ func TestRetryTillMaxAttempts(t *testing.T) {
 	ch := testutils.NewClient(t, nil)
 	defer ch.Close()
 
-	setErr := ErrServerBusy
+	setErr := tchannel.ErrServerBusy
 	runTest := func(maxAttempts, numErrors, expectCounter int, expectErr error) {
-		retryOpts := &RetryOptions{MaxAttempts: maxAttempts}
-		ctx, cancel := NewContextBuilder(time.Second).SetRetryOptions(retryOpts).Build()
+		retryOpts := &tchannel.RetryOptions{MaxAttempts: maxAttempts}
+		ctx, cancel := tchannel.NewContextBuilder(time.Second).SetRetryOptions(retryOpts).Build()
 		defer cancel()
 
 		var errors []error
@@ -166,14 +166,14 @@ func TestRetryTillMaxAttempts(t *testing.T) {
 
 func TestRetrySubContextNoTimeoutPerAttempt(t *testing.T) {
 	e := getTestErrors()
-	ctx, cancel := NewContext(time.Second)
+	ctx, cancel := tchannel.NewContext(time.Second)
 	defer cancel()
 
 	ch := testutils.NewClient(t, nil)
 	defer ch.Close()
 
 	counter := 0
-	ch.RunWithRetry(ctx, func(sctx context.Context, _ *RequestState) error {
+	ch.RunWithRetry(ctx, func(sctx context.Context, _ *tchannel.RequestState) error {
 		counter++
 		assert.Equal(t, ctx, sctx, "Sub-context should be the same")
 		return e.Busy
@@ -183,7 +183,7 @@ func TestRetrySubContextNoTimeoutPerAttempt(t *testing.T) {
 
 func TestRetrySubContextTimeoutPerAttempt(t *testing.T) {
 	e := getTestErrors()
-	ctx, cancel := NewContextBuilder(time.Second).
+	ctx, cancel := tchannel.NewContextBuilder(time.Second).
 		SetTimeoutPerAttempt(time.Millisecond).Build()
 	defer cancel()
 
@@ -193,7 +193,7 @@ func TestRetrySubContextTimeoutPerAttempt(t *testing.T) {
 	var lastDeadline time.Time
 
 	counter := 0
-	ch.RunWithRetry(ctx, func(sctx context.Context, _ *RequestState) error {
+	ch.RunWithRetry(ctx, func(sctx context.Context, _ *tchannel.RequestState) error {
 		counter++
 
 		assert.NotEqual(t, ctx, sctx, "Sub-context should be different")
@@ -214,7 +214,7 @@ func TestRetryNetConnect(t *testing.T) {
 	ch := testutils.NewClient(t, nil)
 	defer ch.Close()
 
-	ctx, cancel := NewContext(time.Second)
+	ctx, cancel := tchannel.NewContext(time.Second)
 	defer cancel()
 
 	closedAddr := testutils.GetClosedHostPort(t)
@@ -223,7 +223,7 @@ func TestRetryNetConnect(t *testing.T) {
 	defer listenC.Close()
 
 	counter := 0
-	f := func(ctx context.Context, rs *RequestState) error {
+	f := func(ctx context.Context, rs *tchannel.RequestState) error {
 		counter++
 		if !rs.HasRetries(e.Connection) {
 			c, err := net.Dial("tcp", listenC.Addr().String())
@@ -244,7 +244,7 @@ func TestRetryNetConnect(t *testing.T) {
 func TestRequestStateSince(t *testing.T) {
 	baseTime := time.Date(2015, 1, 2, 3, 4, 5, 6, time.UTC)
 	tests := []struct {
-		requestState *RequestState
+		requestState *tchannel.RequestState
 		now          time.Time
 		fallback     time.Duration
 		expected     time.Duration
@@ -255,7 +255,7 @@ func TestRequestStateSince(t *testing.T) {
 			expected:     3 * time.Millisecond,
 		},
 		{
-			requestState: &RequestState{Start: baseTime},
+			requestState: &tchannel.RequestState{Start: baseTime},
 			now:          baseTime.Add(7 * time.Millisecond),
 			fallback:     5 * time.Millisecond,
 			expected:     7 * time.Millisecond,

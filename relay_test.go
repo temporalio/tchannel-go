@@ -34,7 +34,7 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/uber/tchannel-go"
+	"github.com/uber/tchannel-go"
 
 	"github.com/uber/tchannel-go/benchmark"
 	"github.com/uber/tchannel-go/raw"
@@ -60,7 +60,7 @@ func serviceNameOpts(s string) *testutils.ChannelOpts {
 	return testutils.NewOpts().SetServiceName(s)
 }
 
-func withRelayedEcho(t testing.TB, f func(relay, server, client *Channel, ts *testutils.TestServer)) {
+func withRelayedEcho(t testing.TB, f func(relay, server, client *tchannel.Channel, ts *testutils.TestServer)) {
 	opts := serviceNameOpts("test").SetRelayOnly()
 	testutils.WithTestServer(t, opts, func(t testing.TB, ts *testutils.TestServer) {
 		testutils.RegisterEcho(ts.Server(), nil)
@@ -71,7 +71,7 @@ func withRelayedEcho(t testing.TB, f func(relay, server, client *Channel, ts *te
 }
 
 func TestRelay(t *testing.T) {
-	withRelayedEcho(t, func(_, _, client *Channel, ts *testutils.TestServer) {
+	withRelayedEcho(t, func(_, _, client *tchannel.Channel, ts *testutils.TestServer) {
 		tests := []struct {
 			header string
 			body   string
@@ -81,7 +81,7 @@ func TestRelay(t *testing.T) {
 		}
 		sc := client.GetSubChannel("test")
 		for _, tt := range tests {
-			ctx, cancel := NewContext(time.Second)
+			ctx, cancel := tchannel.NewContext(time.Second)
 			defer cancel()
 
 			arg2, arg3, _, err := raw.CallSC(ctx, sc, "echo", []byte(tt.header), []byte(tt.body))
@@ -115,7 +115,7 @@ func TestRelayHandlesClosedPeers(t *testing.T) {
 		// Disable logs as we are closing connections that can error in a lot of places.
 		DisableLogVerification()
 	testutils.WithTestServer(t, opts, func(t testing.TB, ts *testutils.TestServer) {
-		ctx, cancel := NewContext(300 * time.Millisecond)
+		ctx, cancel := tchannel.NewContext(300 * time.Millisecond)
 		defer cancel()
 
 		testutils.RegisterEcho(ts.Server(), nil)
@@ -136,7 +136,7 @@ func TestRelayHandlesClosedPeers(t *testing.T) {
 func TestRelayConnectionCloseDrainsRelayItems(t *testing.T) {
 	opts := serviceNameOpts("s1").SetRelayOnly()
 	testutils.WithTestServer(t, opts, func(t testing.TB, ts *testutils.TestServer) {
-		ctx, cancel := NewContext(time.Second)
+		ctx, cancel := tchannel.NewContext(time.Second)
 		defer cancel()
 
 		s1 := ts.Server()
@@ -189,7 +189,7 @@ func TestRelayIDClash(t *testing.T) {
 }
 
 func TestRelayErrorsOnGetPeer(t *testing.T) {
-	busyErr := NewSystemError(ErrCodeBusy, "busy")
+	busyErr := tchannel.NewSystemError(tchannel.ErrCodeBusy, "busy")
 	tests := []struct {
 		desc       string
 		returnPeer string
@@ -202,7 +202,7 @@ func TestRelayErrorsOnGetPeer(t *testing.T) {
 			returnPeer: "",
 			returnErr:  nil,
 			statsKey:   "relay-bad-relay-host",
-			wantErr:    NewSystemError(ErrCodeDeclined, `bad relay host implementation`),
+			wantErr:    tchannel.NewSystemError(tchannel.ErrCodeDeclined, `bad relay host implementation`),
 		},
 		{
 			desc:      "System error getting peer",
@@ -214,7 +214,7 @@ func TestRelayErrorsOnGetPeer(t *testing.T) {
 			desc:      "Unknown error getting peer",
 			returnErr: errors.New("unknown"),
 			statsKey:  "relay-declined",
-			wantErr:   NewSystemError(ErrCodeDeclined, "unknown"),
+			wantErr:   tchannel.NewSystemError(tchannel.ErrCodeDeclined, "unknown"),
 		},
 	}
 
@@ -255,12 +255,12 @@ func TestErrorFrameEndsRelay(t *testing.T) {
 			return
 		}
 
-		se, ok := err.(SystemError)
+		se, ok := err.(tchannel.SystemError)
 		if !assert.True(t, ok, "err should be a SystemError, got %T", err) {
 			return
 		}
 
-		assert.Equal(t, ErrCodeBadRequest, se.Code(), "Expected BadRequest error")
+		assert.Equal(t, tchannel.ErrCodeBadRequest, se.Code(), "Expected BadRequest error")
 
 		calls := relaytest.NewMockStats()
 		calls.Add(client.PeerInfo().ServiceName, "svc", "echo").Failed("bad-request").End()
@@ -307,7 +307,7 @@ func TestRaceCloseWithNewCall(t *testing.T) {
 		// Close the relay, wait for it to close.
 		ts.Relay().Close()
 		closed := testutils.WaitFor(time.Second, func() bool {
-			return ts.Relay().State() == ChannelClosed
+			return ts.Relay().State() == tchannel.ChannelClosed
 		})
 		assert.True(t, closed, "Relay did not close within timeout")
 
@@ -331,7 +331,7 @@ func TestTimeoutCallsThenClose(t *testing.T) {
 			<-unblockEcho
 		})
 
-		ctx, cancel := NewContext(testutils.Timeout(30 * time.Millisecond))
+		ctx, cancel := tchannel.NewContext(testutils.Timeout(30 * time.Millisecond))
 		defer cancel()
 
 		var callers sync.WaitGroup
@@ -378,12 +378,12 @@ func TestLargeTimeoutsAreClamped(t *testing.T) {
 
 		done := make(chan struct{})
 		go func() {
-			ctx, cancel := NewContext(longTTL)
+			ctx, cancel := tchannel.NewContext(longTTL)
 			defer cancel()
 			_, _, _, err := raw.Call(ctx, client, ts.HostPort(), "echo-service", "echo", nil, nil)
 			require.Error(t, err)
-			code := GetSystemErrorCode(err)
-			assert.Equal(t, ErrCodeTimeout, code)
+			code := tchannel.GetSystemErrorCode(err)
+			assert.Equal(t, tchannel.ErrCodeTimeout, code)
 			close(done)
 		}()
 
@@ -398,7 +398,7 @@ func TestLargeTimeoutsAreClamped(t *testing.T) {
 // TestRelayConcurrentCalls makes many concurrent calls and ensures that
 // we don't try to reuse any frames once they've been released.
 func TestRelayConcurrentCalls(t *testing.T) {
-	pool := NewProtectMemFramePool()
+	pool := tchannel.NewProtectMemFramePool()
 	opts := testutils.NewOpts().SetRelayOnly().SetFramePool(pool)
 	testutils.WithTestServer(t, opts, func(t testing.TB, ts *testutils.TestServer) {
 		server := benchmark.NewServer(
@@ -431,7 +431,7 @@ func TestRelayOutgoingConnectionsEphemeral(t *testing.T) {
 	testutils.WithTestServer(t, opts, func(t testing.TB, ts *testutils.TestServer) {
 		s2 := ts.NewServer(serviceNameOpts("s2"))
 		testutils.RegisterFunc(s2, "echo", func(ctx context.Context, args *raw.Args) (*raw.Res, error) {
-			assert.True(t, CurrentCall(ctx).RemotePeer().IsEphemeral,
+			assert.True(t, tchannel.CurrentCall(ctx).RemotePeer().IsEphemeral,
 				"Connections created for the relay should send ephemeral host:port header")
 
 			return &raw.Res{
@@ -461,11 +461,11 @@ func TestRelayHandleLocalCall(t *testing.T) {
 
 		// Sould get a bad request for "test" since the channel does not handle it.
 		err := testutils.CallEcho(client, ts.HostPort(), "test", nil)
-		assert.Equal(t, ErrCodeBadRequest, GetSystemErrorCode(err), "Expected BadRequest for test")
+		assert.Equal(t, tchannel.ErrCodeBadRequest, tchannel.GetSystemErrorCode(err), "Expected BadRequest for test")
 
 		// But an unknown service causes declined
 		err = testutils.CallEcho(client, ts.HostPort(), "unknown", nil)
-		assert.Equal(t, ErrCodeDeclined, GetSystemErrorCode(err), "Expected Declined for unknown")
+		assert.Equal(t, tchannel.ErrCodeDeclined, tchannel.GetSystemErrorCode(err), "Expected Declined for unknown")
 
 		calls := relaytest.NewMockStats()
 		calls.Add(client.ServiceName(), "s2", "echo").Succeeded().End()
@@ -489,13 +489,13 @@ func TestRelayHandleLargeLocalCall(t *testing.T) {
 			Arg2: testutils.RandBytes(128 * 1024),
 			Arg3: testutils.RandBytes(128 * 1024),
 		})
-		if assert.Equal(t, ErrCodeBadRequest, GetSystemErrorCode(err), "Expected BadRequest for large call to relay") {
+		if assert.Equal(t, tchannel.ErrCodeBadRequest, tchannel.GetSystemErrorCode(err), "Expected BadRequest for large call to relay") {
 			assert.Contains(t, err.Error(), "cannot receive fragmented calls")
 		}
 
 		// We may get an error before the call is finished flushing.
 		// Do a ping to ensure everything has been flushed.
-		ctx, cancel := NewContext(time.Second)
+		ctx, cancel := tchannel.NewContext(time.Second)
 		defer cancel()
 		require.NoError(t, client.Ping(ctx, ts.HostPort()), "Ping failed")
 	})
@@ -558,7 +558,7 @@ func TestRelayContextInheritsFromOutboundConnection(t *testing.T) {
 		testutils.RegisterEcho(caller, nil)
 
 		baseCtx := context.WithValue(context.Background(), "foo", "bar")
-		ctx, cancel := NewContextBuilder(time.Second).SetConnectBaseContext(baseCtx).Build()
+		ctx, cancel := tchannel.NewContextBuilder(time.Second).SetConnectBaseContext(baseCtx).Build()
 		defer cancel()
 
 		require.NoError(t, rly.Ping(ctx, caller.PeerInfo().HostPort))
@@ -579,7 +579,7 @@ func TestRelayConnection(t *testing.T) {
 		SetRelayOnly().
 		SetRelayHost(relaytest.HostFunc(getHost))
 	testutils.WithTestServer(t, opts, func(t testing.TB, ts *testutils.TestServer) {
-		getConn := func(ch *Channel, outbound bool) ConnectionRuntimeState {
+		getConn := func(ch *tchannel.Channel, outbound bool) tchannel.ConnectionRuntimeState {
 			state := ch.IntrospectState(nil)
 			peer, ok := state.RootPeers[ts.HostPort()]
 			require.True(t, ok, "Failed to find peer for relay")
@@ -656,7 +656,7 @@ func TestRelayConnection(t *testing.T) {
 }
 
 func TestRelayConnectionClosed(t *testing.T) {
-	protocolErr := NewSystemError(ErrCodeProtocol, "invalid service name")
+	protocolErr := tchannel.NewSystemError(tchannel.ErrCodeProtocol, "invalid service name")
 	getHost := func(relay.CallFrame, *relay.Conn) (string, error) {
 		return "", protocolErr
 	}
@@ -756,10 +756,10 @@ func TestRelayRateLimitDrop(t *testing.T) {
 		go func() {
 			// We want to use a low timeout here since the test waits for this
 			// call to timeout.
-			ctx, cancel := NewContext(testutils.Timeout(100 * time.Millisecond))
+			ctx, cancel := tchannel.NewContext(testutils.Timeout(100 * time.Millisecond))
 			defer cancel()
 			_, _, _, err := raw.Call(ctx, client, ts.HostPort(), ts.ServiceName(), "echo", nil, nil)
-			require.Equal(t, ErrTimeout, err, "Expected CallEcho to fail")
+			require.Equal(t, tchannel.ErrTimeout, err, "Expected CallEcho to fail")
 			defer wg.Done()
 		}()
 
@@ -791,14 +791,14 @@ func TestRelayStalledConnection(t *testing.T) {
 
 		stall := make(chan struct{})
 		stallComplete := make(chan struct{})
-		stallHandler := func(ctx context.Context, call *InboundCall) {
+		stallHandler := func(ctx context.Context, call *tchannel.InboundCall) {
 			<-stall
 			raw.ReadArgs(call)
 			close(stallComplete)
 		}
-		ts.Register(HandlerFunc(stallHandler), "echo")
+		ts.Register(tchannel.HandlerFunc(stallHandler), "echo")
 
-		ctx, cancel := NewContext(testutils.Timeout(300 * time.Millisecond))
+		ctx, cancel := tchannel.NewContext(testutils.Timeout(300 * time.Millisecond))
 		defer cancel()
 
 		client := ts.NewClient(nil)
@@ -830,7 +830,7 @@ func TestRelayStalledConnection(t *testing.T) {
 		testutils.AssertEcho(t, client, ts.HostPort(), "s2")
 
 		// Verify the sendCh is full, and the buffers are utilized.
-		state := ts.Relay().IntrospectState(&IntrospectionOptions{})
+		state := ts.Relay().IntrospectState(&tchannel.IntrospectionOptions{})
 		connState := state.RootPeers[ts.Server().PeerInfo().HostPort].OutboundConnections[0]
 		assert.Equal(t, 32, connState.SendChCapacity, "unexpected SendChCapacity")
 		assert.NotZero(t, connState.SendChQueued, "unexpected SendChQueued")
@@ -880,7 +880,7 @@ func TestRelayStalledClientConnection(t *testing.T) {
 
 		// Create a frame relay that will block all client inbound frames.
 		unblockClientInbound := make(chan struct{})
-		blockerHostPort, relayCancel := testutils.FrameRelay(t, ts.HostPort(), func(outgoing bool, f *Frame) *Frame {
+		blockerHostPort, relayCancel := testutils.FrameRelay(t, ts.HostPort(), func(outgoing bool, f *tchannel.Frame) *tchannel.Frame {
 			if !outgoing && f.Header.ID > 1 {
 				// Block all inbound frames except the initRes
 				<-unblockClientInbound
@@ -893,10 +893,10 @@ func TestRelayStalledClientConnection(t *testing.T) {
 
 		client := ts.NewClient(nil)
 
-		ctx, cancel := NewContext(testutils.Timeout(time.Second))
+		ctx, cancel := tchannel.NewContext(testutils.Timeout(time.Second))
 		defer cancel()
 
-		var calls []*OutboundCall
+		var calls []*tchannel.OutboundCall
 
 		// Data to fit one frame fully, but large enough that a number of these frames will fill
 		// all the buffers and cause the relay to drop the response frame. Buffers are:
@@ -908,8 +908,8 @@ func TestRelayStalledClientConnection(t *testing.T) {
 			call, err := client.BeginCall(ctx, blockerHostPort, ts.ServiceName(), "echo", nil)
 			require.NoError(t, err, "BeginCall failed")
 
-			require.NoError(t, NewArgWriter(call.Arg2Writer()).Write(nil), "arg2 write failed")
-			require.NoError(t, NewArgWriter(call.Arg3Writer()).Write(data), "arg2 write failed")
+			require.NoError(t, tchannel.NewArgWriter(call.Arg2Writer()).Write(nil), "arg2 write failed")
+			require.NoError(t, tchannel.NewArgWriter(call.Arg3Writer()).Write(data), "arg2 write failed")
 
 			// Wait for server to receive the call
 			<-gotCall
@@ -928,7 +928,7 @@ func TestRelayStalledClientConnection(t *testing.T) {
 		// Unblock the client so it can close.
 		cancel()
 		for _, call := range calls {
-			require.Error(t, NewArgReader(call.Response().Arg2Reader()).Read(&data), "should fail to read response")
+			require.Error(t, tchannel.NewArgReader(call.Response().Arg2Reader()).Read(&data), "should fail to read response")
 		}
 	})
 }
@@ -954,7 +954,7 @@ func TestRelayCorruptedCallResFrame(t *testing.T) {
 			return &raw.Res{Arg2: args.Arg2, Arg3: args.Arg3}, nil
 		})
 
-		mitmHostPort, relayCancel := testutils.FrameRelay(t, s1.PeerInfo().HostPort, func(outgoing bool, f *Frame) *Frame {
+		mitmHostPort, relayCancel := testutils.FrameRelay(t, s1.PeerInfo().HostPort, func(outgoing bool, f *tchannel.Frame) *tchannel.Frame {
 			// We care only about callRes frames
 			if f.Header.MessageType() == 0x04 {
 				// Corrupt the frame by truncating its payload size to 1 byte
@@ -970,22 +970,22 @@ func TestRelayCorruptedCallResFrame(t *testing.T) {
 		client := ts.NewClient(nil)
 		defer client.Close()
 
-		ctx, cancel := NewContext(testutils.Timeout(time.Second))
+		ctx, cancel := tchannel.NewContext(testutils.Timeout(time.Second))
 		defer cancel()
 
 		data := bytes.Repeat([]byte("test"), 256*60)
 		call, err := client.BeginCall(ctx, ts.Relay().PeerInfo().HostPort, "s1", "echo", nil)
 		require.NoError(t, err, "BeginCall failed")
 
-		require.NoError(t, NewArgWriter(call.Arg2Writer()).Write(nil), "arg2 write failed")
-		require.NoError(t, NewArgWriter(call.Arg3Writer()).Write(data), "arg2 write failed")
+		require.NoError(t, tchannel.NewArgWriter(call.Arg2Writer()).Write(nil), "arg2 write failed")
+		require.NoError(t, tchannel.NewArgWriter(call.Arg3Writer()).Write(data), "arg2 write failed")
 
 		// Wait for server to receive the call
 		<-gotCall
 
 		// Unblock the client so it can close.
 		cancel()
-		require.Error(t, NewArgReader(call.Response().Arg2Reader()).Read(&data), "should fail to read response")
+		require.Error(t, tchannel.NewArgReader(call.Response().Arg2Reader()).Read(&data), "should fail to read response")
 	})
 }
 
@@ -1002,13 +1002,13 @@ func TestRelayThroughSeparateRelay(t *testing.T) {
 
 		// Override where the peers come from.
 		ts.RelayHost().SetChannel(relay2)
-		relay2.GetSubChannel(ts.ServiceName(), Isolated).Peers().Add(serverHP)
+		relay2.GetSubChannel(ts.ServiceName(), tchannel.Isolated).Peers().Add(serverHP)
 
 		testutils.RegisterEcho(ts.Server(), nil)
 		client := ts.NewClient(nil)
 		testutils.AssertEcho(t, client, ts.HostPort(), ts.ServiceName())
 
-		numConns := func(p PeerRuntimeState) int {
+		numConns := func(p tchannel.PeerRuntimeState) int {
 			return len(p.InboundConnections) + len(p.OutboundConnections)
 		}
 
@@ -1031,7 +1031,7 @@ func TestRelayConcurrentNewConnectionAttempts(t *testing.T) {
 		testutils.RegisterEcho(slowServer, nil)
 
 		var delayed atomic.Bool
-		relayFunc := func(outgoing bool, f *Frame) *Frame {
+		relayFunc := func(outgoing bool, f *tchannel.Frame) *tchannel.Frame {
 			if !delayed.Load() {
 				time.Sleep(testutils.Timeout(50 * time.Millisecond))
 				delayed.Store(true)
@@ -1081,7 +1081,7 @@ func TestRelayRaceTimerCausesStuckConnectionOnClose(t *testing.T) {
 	testutils.WithTestServer(t, opts, func(t testing.TB, ts *testutils.TestServer) {
 		testutils.RegisterEcho(ts.Server(), nil)
 		// Create clients and ensure we can make a successful request.
-		clients := make([]*Channel, concurrentClients)
+		clients := make([]*tchannel.Channel, concurrentClients)
 
 		var callTime time.Duration
 		for i := range clients {
@@ -1092,19 +1092,19 @@ func TestRelayRaceTimerCausesStuckConnectionOnClose(t *testing.T) {
 		}
 
 		// Overwrite the echo method with one that times out for the test.
-		ts.Server().Register(HandlerFunc(func(ctx context.Context, call *InboundCall) {
+		ts.Server().Register(tchannel.HandlerFunc(func(ctx context.Context, call *tchannel.InboundCall) {
 			call.Response().Blackhole()
 		}), "echo")
 
 		var wg sync.WaitGroup
 		for i := 0; i < concurrentClients; i++ {
 			wg.Add(1)
-			go func(client *Channel) {
+			go func(client *tchannel.Channel) {
 				defer wg.Done()
 
 				for j := 0; j < callsPerClient; j++ {
 					// Make many concurrent calls which, some of which should timeout.
-					ctx, cancel := NewContext(callTime)
+					ctx, cancel := tchannel.NewContext(callTime)
 					raw.Call(ctx, client, ts.HostPort(), ts.ServiceName(), "echo", nil, nil)
 					cancel()
 				}
@@ -1142,7 +1142,7 @@ func TestRelayRaceCompletionAndTimeout(t *testing.T) {
 			go func() {
 				defer wg.Done()
 
-				ctx, cancel := NewContext(callTime)
+				ctx, cancel := tchannel.NewContext(callTime)
 				raw.Call(ctx, client, ts.HostPort(), ts.ServiceName(), "echo", nil, nil)
 				cancel()
 			}()
@@ -1154,7 +1154,7 @@ func TestRelayRaceCompletionAndTimeout(t *testing.T) {
 }
 
 func TestRelayArg2OffsetIntegration(t *testing.T) {
-	ctx, cancel := NewContext(testutils.Timeout(time.Second))
+	ctx, cancel := tchannel.NewContext(testutils.Timeout(time.Second))
 	defer cancel()
 
 	rh := relaytest.NewStubRelayHost()
@@ -1172,7 +1172,7 @@ func TestRelayArg2OffsetIntegration(t *testing.T) {
 
 		var (
 			wantArg2Start = len(ts.ServiceName()) + len(testMethod) + 70 /*data before arg1*/
-			payloadLeft   = MaxFramePayloadSize - wantArg2Start
+			payloadLeft   = tchannel.MaxFramePayloadSize - wantArg2Start
 		)
 
 		testutils.RegisterEcho(ts.Server(), nil)
@@ -1217,7 +1217,7 @@ func TestRelayArg2OffsetIntegration(t *testing.T) {
 			},
 			{
 				msg:           "XL arg2 which is fragmented",
-				arg2Data:      string(make([]byte, MaxFrameSize+100)),
+				arg2Data:      string(make([]byte, tchannel.MaxFrameSize+100)),
 				wantEndOffset: wantArg2Start + payloadLeft,
 				wantHasMore:   true,
 			},
@@ -1270,7 +1270,7 @@ func TestRelayArg2OffsetIntegration(t *testing.T) {
 				if tt.noArg3 {
 					arg3DataToWrite = ""
 				}
-				require.NoError(t, NewArgWriter(call.Arg3Writer()).Write([]byte(arg3DataToWrite)), "arg3 write failed")
+				require.NoError(t, tchannel.NewArgWriter(call.Arg3Writer()).Write([]byte(arg3DataToWrite)), "arg3 write failed")
 
 				f := <-frameCh
 				start := f.Arg2StartOffset()
@@ -1289,7 +1289,7 @@ func TestRelayArg2OffsetIntegration(t *testing.T) {
 }
 
 func TestRelayThriftArg2KeyValueIteration(t *testing.T) {
-	ctx, cancel := NewContext(testutils.Timeout(time.Second))
+	ctx, cancel := tchannel.NewContext(testutils.Timeout(time.Second))
 	defer cancel()
 
 	rh := relaytest.NewStubRelayHost()
@@ -1316,10 +1316,10 @@ func TestRelayThriftArg2KeyValueIteration(t *testing.T) {
 		client := testutils.NewClient(t, nil /*opts*/)
 		defer client.Close()
 
-		call, err := client.BeginCall(ctx, ts.HostPort(), ts.ServiceName(), testMethod, &CallOptions{Format: Thrift})
+		call, err := client.BeginCall(ctx, ts.HostPort(), ts.ServiceName(), testMethod, &tchannel.CallOptions{Format: tchannel.Thrift})
 		require.NoError(t, err, "BeginCall failed")
-		require.NoError(t, NewArgWriter(call.Arg2Writer()).Write(arg2Buf), "arg2 write failed")
-		require.NoError(t, NewArgWriter(call.Arg3Writer()).Write([]byte(arg3Data)), "arg3 write failed")
+		require.NoError(t, tchannel.NewArgWriter(call.Arg2Writer()).Write(arg2Buf), "arg2 write failed")
+		require.NoError(t, tchannel.NewArgWriter(call.Arg3Writer()).Write([]byte(arg3Data)), "arg3 write failed")
 
 		f := <-frameCh
 		iter, err := f.Arg2Iterator()
@@ -1387,13 +1387,13 @@ func TestRelayConnectionTimeout(t *testing.T) {
 
 				start := time.Now()
 
-				ctx, cancel := NewContext(testutils.Timeout(tt.callTimeout))
+				ctx, cancel := tchannel.NewContext(testutils.Timeout(tt.callTimeout))
 				defer cancel()
 
 				// We expect connection error logs from the client.
 				client := ts.NewClient(nil /* opts */)
 				_, _, _, err = raw.Call(ctx, client, ts.HostPort(), "blocked", "echo", nil, nil)
-				assert.Equal(t, ErrTimeout, err)
+				assert.Equal(t, tchannel.ErrTimeout, err)
 
 				taken := time.Since(start)
 				if taken < minTimeout || taken > maxTimeout {
@@ -1433,8 +1433,8 @@ func TestRelayTransferredBytes(t *testing.T) {
 		})
 
 		// Helper to make calls with specific payload sizes.
-		makeCall := func(src, dst *Channel, method string, arg2Size, arg3Size int) {
-			ctx, cancel := NewContext(testutils.Timeout(time.Second))
+		makeCall := func(src, dst *tchannel.Channel, method string, arg2Size, arg3Size int) {
+			ctx, cancel := tchannel.NewContext(testutils.Timeout(time.Second))
 			defer cancel()
 
 			arg2 := testutils.RandBytes(arg2Size)
@@ -1479,7 +1479,7 @@ func TestRelayTransferredBytes(t *testing.T) {
 }
 
 func TestRelayCallResponse(t *testing.T) {
-	ctx, cancel := NewContext(testutils.Timeout(time.Second))
+	ctx, cancel := tchannel.NewContext(testutils.Timeout(time.Second))
 	defer cancel()
 
 	kv := map[string]string{
@@ -1492,7 +1492,7 @@ func TestRelayCallResponse(t *testing.T) {
 
 	rh.SetRespFrameFn(func(frame relay.RespFrame) {
 		require.True(t, frame.OK(), "Got unexpected response status")
-		require.Equal(t, Thrift.String(), string(frame.ArgScheme()), "Got unexpected scheme")
+		require.Equal(t, tchannel.Thrift.String(), string(frame.ArgScheme()), "Got unexpected scheme")
 
 		iter, err := arg2.NewKeyValIterator(frame.Arg2())
 		require.NoError(t, err, "Got unexpected iterator error")
@@ -1520,10 +1520,10 @@ func TestRelayCallResponse(t *testing.T) {
 		client := testutils.NewClient(t, nil /*opts*/)
 		defer client.Close()
 
-		call, err := client.BeginCall(ctx, ts.HostPort(), ts.ServiceName(), testMethod, &CallOptions{Format: Thrift})
+		call, err := client.BeginCall(ctx, ts.HostPort(), ts.ServiceName(), testMethod, &tchannel.CallOptions{Format: tchannel.Thrift})
 		require.NoError(t, err, "BeginCall failed")
-		require.NoError(t, NewArgWriter(call.Arg2Writer()).Write(arg2Buf), "arg2 write failed")
-		require.NoError(t, NewArgWriter(call.Arg3Writer()).Write([]byte(arg3Data)), "arg3 write failed")
+		require.NoError(t, tchannel.NewArgWriter(call.Arg2Writer()).Write(arg2Buf), "arg2 write failed")
+		require.NoError(t, tchannel.NewArgWriter(call.Arg3Writer()).Write([]byte(arg3Data)), "arg3 write failed")
 
 		gotArg2, gotArg3, err := raw.ReadArgsV2(call.Response())
 		assert.NoError(t, err)
@@ -1582,8 +1582,8 @@ func TestRelayAppendArg2SentBytes(t *testing.T) {
 				testutils.RegisterEcho(svr, nil)
 
 				client := testutils.NewClient(t, nil)
-				ctx, cancel := NewContextBuilder(testutils.Timeout(time.Second)).
-					SetFormat(Thrift).Build()
+				ctx, cancel := tchannel.NewContextBuilder(testutils.Timeout(time.Second)).
+					SetFormat(tchannel.Thrift).Build()
 				defer cancel()
 
 				sendArgs := &raw.Args{
@@ -1644,7 +1644,7 @@ func addFixedKeyVal(kvPairs []keyVal) *arg2KeyValRelayModifier {
 	}
 }
 
-func fillFrameWithArg2(t *testing.T, checksumType ChecksumType, arg1 string, arg2 map[string]string, bytePosFromBoundary int) *arg2KeyValRelayModifier {
+func fillFrameWithArg2(t *testing.T, checksumType tchannel.ChecksumType, arg1 string, arg2 map[string]string, bytePosFromBoundary int) *arg2KeyValRelayModifier {
 	arg2Key := "foo"
 	arg2Len := 2 // nh
 	for k, v := range arg2 {
@@ -1689,34 +1689,34 @@ func TestRelayModifyArg2(t *testing.T) {
 
 	checksumTypes := []struct {
 		msg          string
-		checksumType ChecksumType
+		checksumType tchannel.ChecksumType
 	}{
-		{"none", ChecksumTypeNone},
-		{"crc32", ChecksumTypeCrc32},
-		{"farmhash", ChecksumTypeFarmhash},
-		{"crc32c", ChecksumTypeCrc32C},
+		{"none", tchannel.ChecksumTypeNone},
+		{"crc32", tchannel.ChecksumTypeCrc32},
+		{"farmhash", tchannel.ChecksumTypeFarmhash},
+		{"crc32c", tchannel.ChecksumTypeCrc32C},
 	}
 
 	modifyTests := []struct {
 		msg      string
 		skip     string
-		modifier func(t *testing.T, cst ChecksumType, arg1 string, arg2 map[string]string) relayModifier
+		modifier func(t *testing.T, cst tchannel.ChecksumType, arg1 string, arg2 map[string]string) relayModifier
 	}{
 		{
 			msg: "no change",
-			modifier: func(t *testing.T, cst ChecksumType, arg1 string, arg2 map[string]string) relayModifier {
+			modifier: func(t *testing.T, cst tchannel.ChecksumType, arg1 string, arg2 map[string]string) relayModifier {
 				return &noopRelayModifer{}
 			},
 		},
 		{
 			msg: "add zero-length key/value",
-			modifier: func(t *testing.T, cst ChecksumType, arg1 string, arg2 map[string]string) relayModifier {
+			modifier: func(t *testing.T, cst tchannel.ChecksumType, arg1 string, arg2 map[string]string) relayModifier {
 				return addFixedKeyVal([]keyVal{{key: "", val: ""}})
 			},
 		},
 		{
 			msg: "add multiple zero-length key/value",
-			modifier: func(t *testing.T, cst ChecksumType, arg1 string, arg2 map[string]string) relayModifier {
+			modifier: func(t *testing.T, cst tchannel.ChecksumType, arg1 string, arg2 map[string]string) relayModifier {
 				return addFixedKeyVal([]keyVal{
 					{"", ""},
 					{"", ""},
@@ -1726,7 +1726,7 @@ func TestRelayModifyArg2(t *testing.T) {
 		},
 		{
 			msg: "add small key/value",
-			modifier: func(t *testing.T, cst ChecksumType, arg1 string, arg2 map[string]string) relayModifier {
+			modifier: func(t *testing.T, cst tchannel.ChecksumType, arg1 string, arg2 map[string]string) relayModifier {
 				return addFixedKeyVal([]keyVal{
 					{"foo", "bar"},
 					{"baz", "qux"},
@@ -1735,37 +1735,37 @@ func TestRelayModifyArg2(t *testing.T) {
 		},
 		{
 			msg: "fill the first frame until 2 bytes remain",
-			modifier: func(t *testing.T, cst ChecksumType, arg1 string, arg2 map[string]string) relayModifier {
+			modifier: func(t *testing.T, cst tchannel.ChecksumType, arg1 string, arg2 map[string]string) relayModifier {
 				return fillFrameWithArg2(t, cst, arg1, arg2, -2)
 			},
 		},
 		{
 			msg: "fill the first frame until 1 byte remain",
-			modifier: func(t *testing.T, cst ChecksumType, arg1 string, arg2 map[string]string) relayModifier {
+			modifier: func(t *testing.T, cst tchannel.ChecksumType, arg1 string, arg2 map[string]string) relayModifier {
 				return fillFrameWithArg2(t, cst, arg1, arg2, -1)
 			},
 		},
 		{
 			msg: "fill the first frame to its boundary",
-			modifier: func(t *testing.T, cst ChecksumType, arg1 string, arg2 map[string]string) relayModifier {
+			modifier: func(t *testing.T, cst tchannel.ChecksumType, arg1 string, arg2 map[string]string) relayModifier {
 				return fillFrameWithArg2(t, cst, arg1, arg2, 0)
 			},
 		},
 		{
 			msg: "fill the first frame to 1 byte over its boundary",
-			modifier: func(t *testing.T, cst ChecksumType, arg1 string, arg2 map[string]string) relayModifier {
+			modifier: func(t *testing.T, cst tchannel.ChecksumType, arg1 string, arg2 map[string]string) relayModifier {
 				return fillFrameWithArg2(t, cst, arg1, arg2, 1)
 			},
 		},
 		{
 			msg: "fill the first frame to 2 bytes over its boundary",
-			modifier: func(t *testing.T, cst ChecksumType, arg1 string, arg2 map[string]string) relayModifier {
+			modifier: func(t *testing.T, cst tchannel.ChecksumType, arg1 string, arg2 map[string]string) relayModifier {
 				return fillFrameWithArg2(t, cst, arg1, arg2, 2)
 			},
 		},
 		{
 			msg: "add large key/value which pushes arg2 into 2nd frame",
-			modifier: func(t *testing.T, cst ChecksumType, arg1 string, arg2 map[string]string) relayModifier {
+			modifier: func(t *testing.T, cst tchannel.ChecksumType, arg1 string, arg2 map[string]string) relayModifier {
 				return addFixedKeyVal([]keyVal{
 					{"fee", testutils.RandString(65535)},
 				})
@@ -1773,7 +1773,7 @@ func TestRelayModifyArg2(t *testing.T) {
 		},
 		{
 			msg: "add large key/value which pushes arg2 into 2nd and 3rd frame",
-			modifier: func(t *testing.T, cst ChecksumType, arg1 string, arg2 map[string]string) relayModifier {
+			modifier: func(t *testing.T, cst tchannel.ChecksumType, arg1 string, arg2 map[string]string) relayModifier {
 				return addFixedKeyVal([]keyVal{
 					{"fee", testutils.RandString(65535)},
 					{"fi", testutils.RandString(65535)},
@@ -1851,7 +1851,7 @@ func TestRelayModifyArg2(t *testing.T) {
 	}
 
 	const (
-		format      = Thrift
+		format      = tchannel.Thrift
 		noErrMethod = "EchoVerifyNoErr"
 		errMethod   = "EchoVerifyErr"
 	)
@@ -1905,7 +1905,7 @@ func TestRelayModifyArg2(t *testing.T) {
 								ts.Server().Register(raw.Wrap(handler), appErrTest.method)
 							}
 
-							ctx, cancel := NewContextBuilder(testutils.Timeout(time.Second)).
+							ctx, cancel := tchannel.NewContextBuilder(testutils.Timeout(time.Second)).
 								SetFormat(format).Build()
 							defer cancel()
 
@@ -1933,7 +1933,7 @@ func TestRelayModifyArg2ShouldFail(t *testing.T) {
 	tests := []struct {
 		msg     string
 		arg2    []byte
-		format  Format
+		format  tchannel.Format
 		wantErr string
 	}{
 		{
@@ -1948,7 +1948,7 @@ func TestRelayModifyArg2ShouldFail(t *testing.T) {
 		},
 		{
 			msg:    "non-Thrift call",
-			format: JSON,
+			format: tchannel.JSON,
 			arg2: thriftarg2test.BuildKVBuffer(map[string]string{
 				"fee": testutils.RandString(16 * 1024),
 			}),
@@ -1976,7 +1976,7 @@ func TestRelayModifyArg2ShouldFail(t *testing.T) {
 				testutils.RegisterEcho(caller, nil)
 
 				baseCtx := context.WithValue(context.Background(), "foo", "bar")
-				ctx, cancel := NewContextBuilder(time.Second).SetConnectBaseContext(baseCtx).Build()
+				ctx, cancel := tchannel.NewContextBuilder(time.Second).SetConnectBaseContext(baseCtx).Build()
 				defer cancel()
 
 				require.NoError(t, rly.Ping(ctx, caller.PeerInfo().HostPort))
@@ -1990,7 +1990,7 @@ func TestRelayModifyArg2ShouldFail(t *testing.T) {
 
 				// Even after a failure, a simple call should still suceed (e.g., connection is left in a safe state).
 				err = testutils.CallEcho(caller, ts.HostPort(), ts.ServiceName(), &raw.Args{
-					Format: Thrift,
+					Format: tchannel.Thrift,
 					Arg2:   encodeThriftHeaders(t, map[string]string{"key": "value"}),
 					Arg3:   testutils.RandBytes(100),
 				})
@@ -2006,7 +2006,7 @@ type echoVerifyHandler struct {
 	t testing.TB
 
 	appErr       bool
-	verifyFormat Format
+	verifyFormat tchannel.Format
 	verifyCaller string
 	verifyMethod string
 }

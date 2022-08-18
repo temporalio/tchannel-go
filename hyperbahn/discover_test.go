@@ -23,7 +23,7 @@ package hyperbahn_test
 import (
 	"testing"
 
-	. "github.com/uber/tchannel-go/hyperbahn"
+	"github.com/uber/tchannel-go/hyperbahn"
 
 	"github.com/uber/tchannel-go/testutils"
 	"github.com/uber/tchannel-go/testutils/mockhyperbahn"
@@ -32,13 +32,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func withSetup(t *testing.T, f func(mh *mockhyperbahn.Mock, client *Client)) {
+func withSetup(t *testing.T, f func(mh *mockhyperbahn.Mock, client *hyperbahn.Client)) {
 	mh, err := mockhyperbahn.New()
 	require.NoError(t, err, "mockhyperbahn.New failed")
 	defer mh.Close()
 
 	clientCh := testutils.NewClient(t, nil)
-	client, err := NewClient(clientCh, mh.Configuration(), nil)
+	client, err := hyperbahn.NewClient(clientCh, mh.Configuration(), nil)
 	require.NoError(t, err, "NewClient failed")
 	defer clientCh.Close()
 
@@ -53,7 +53,7 @@ func TestDiscoverSuccess(t *testing.T) {
 		"10.254.254.1:21151",
 	}
 
-	withSetup(t, func(mh *mockhyperbahn.Mock, client *Client) {
+	withSetup(t, func(mh *mockhyperbahn.Mock, client *hyperbahn.Client) {
 		mh.SetDiscoverResult("test-discover", peers)
 
 		gotPeers, err := client.Discover("test-discover")
@@ -63,7 +63,7 @@ func TestDiscoverSuccess(t *testing.T) {
 }
 
 func TestDiscoverFails(t *testing.T) {
-	withSetup(t, func(mh *mockhyperbahn.Mock, client *Client) {
+	withSetup(t, func(mh *mockhyperbahn.Mock, client *hyperbahn.Client) {
 		_, err := client.Discover("test-discover")
 		assert.Error(t, err, "Discover should fail due to no discover result set in the mock")
 	})

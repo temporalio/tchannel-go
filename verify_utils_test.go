@@ -23,14 +23,14 @@ package tchannel_test
 import (
 	"testing"
 
-	. "github.com/uber/tchannel-go"
+	"github.com/uber/tchannel-go"
 
 	"github.com/uber/tchannel-go/testutils"
 )
 
 // WithVerifiedServer runs the given test function with a server channel that is verified
 // at the end to make sure there are no leaks (e.g. no exchanges leaked).
-func WithVerifiedServer(t *testing.T, opts *testutils.ChannelOpts, f func(serverCh *Channel, hostPort string)) {
+func WithVerifiedServer(t *testing.T, opts *testutils.ChannelOpts, f func(serverCh *tchannel.Channel, hostPort string)) {
 	testutils.WithTestServer(t, opts, func(t testing.TB, ts *testutils.TestServer) {
 		f(ts.Server(), ts.HostPort())
 	})

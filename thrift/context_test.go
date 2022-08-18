@@ -25,7 +25,7 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/uber/tchannel-go/thrift"
+	"github.com/uber/tchannel-go/thrift"
 
 	"github.com/uber/tchannel-go"
 	"github.com/uber/tchannel-go/raw"
@@ -37,12 +37,12 @@ import (
 )
 
 func TestWrapContext(t *testing.T) {
-	tctx, cancel := NewContext(time.Second)
+	tctx, cancel := thrift.NewContext(time.Second)
 	defer cancel()
 
 	headers := map[string]string{"h1": "v1"}
-	ctx := context.WithValue(WithHeaders(tctx, headers), "1", "2")
-	wrapped := Wrap(ctx)
+	ctx := context.WithValue(thrift.WithHeaders(tctx, headers), "1", "2")
+	wrapped := thrift.Wrap(ctx)
 	assert.NotNil(t, wrapped, "Should not return nil.")
 
 	assert.Equal(t, headers, wrapped.Headers(), "Unexpected headers")
@@ -66,7 +66,7 @@ func TestContextBuilder(t *testing.T) {
 			return nil, errors.New("err")
 		})
 
-		client := NewClient(ch, ch.PeerInfo().ServiceName, &ClientOptions{
+		client := thrift.NewClient(ch, ch.PeerInfo().ServiceName, &thrift.ClientOptions{
 			HostPort: peerInfo.HostPort,
 		})
 		secondClient := gen.NewTChanSecondServiceClient(client)

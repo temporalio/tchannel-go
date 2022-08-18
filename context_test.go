@@ -23,7 +23,7 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/uber/tchannel-go"
+	"github.com/uber/tchannel-go"
 
 	"github.com/uber/tchannel-go/raw"
 	"github.com/uber/tchannel-go/testutils"
@@ -38,14 +38,14 @@ var cn = "hello"
 
 func TestWrapContextForTest(t *testing.T) {
 	call := testutils.NewIncomingCall(cn)
-	ctx, cancel := NewContext(time.Second)
+	ctx, cancel := tchannel.NewContext(time.Second)
 	defer cancel()
-	actual := WrapContextForTest(ctx, call)
-	assert.Equal(t, call, CurrentCall(actual), "Incorrect call object returned.")
+	actual := tchannel.WrapContextForTest(ctx, call)
+	assert.Equal(t, call, tchannel.CurrentCall(actual), "Incorrect call object returned.")
 }
 
 func TestNewContextTimeoutZero(t *testing.T) {
-	ctx, cancel := NewContextBuilder(0).Build()
+	ctx, cancel := tchannel.NewContextBuilder(0).Build()
 	defer cancel()
 
 	deadline, ok := ctx.Deadline()
@@ -54,21 +54,21 @@ func TestNewContextTimeoutZero(t *testing.T) {
 }
 
 func TestRoutingDelegatePropagates(t *testing.T) {
-	WithVerifiedServer(t, nil, func(ch *Channel, hostPort string) {
+	WithVerifiedServer(t, nil, func(ch *tchannel.Channel, hostPort string) {
 		peerInfo := ch.PeerInfo()
 		testutils.RegisterFunc(ch, "test", func(ctx context.Context, args *raw.Args) (*raw.Res, error) {
 			return &raw.Res{
-				Arg3: []byte(CurrentCall(ctx).RoutingDelegate()),
+				Arg3: []byte(tchannel.CurrentCall(ctx).RoutingDelegate()),
 			}, nil
 		})
 
-		ctx, cancel := NewContextBuilder(time.Second).Build()
+		ctx, cancel := tchannel.NewContextBuilder(time.Second).Build()
 		defer cancel()
 		_, arg3, _, err := raw.Call(ctx, ch, peerInfo.HostPort, peerInfo.ServiceName, "test", nil, nil)
 		assert.NoError(t, err, "Call failed")
 		assert.Equal(t, "", string(arg3), "Expected no routing delegate header")
 
-		ctx, cancel = NewContextBuilder(time.Second).SetRoutingDelegate("xpr").Build()
+		ctx, cancel = tchannel.NewContextBuilder(time.Second).SetRoutingDelegate("xpr").Build()
 		defer cancel()
 		_, arg3, _, err = raw.Call(ctx, ch, peerInfo.HostPort, peerInfo.ServiceName, "test", nil, nil)
 		assert.NoError(t, err, "Call failed")
@@ -77,21 +77,21 @@ func TestRoutingDelegatePropagates(t *testing.T) {
 }
 
 func TestRoutingKeyPropagates(t *testing.T) {
-	WithVerifiedServer(t, nil, func(ch *Channel, hostPort string) {
+	WithVerifiedServer(t, nil, func(ch *tchannel.Channel, hostPort string) {
 		peerInfo := ch.PeerInfo()
 		testutils.RegisterFunc(ch, "test", func(ctx context.Context, args *raw.Args) (*raw.Res, error) {
 			return &raw.Res{
-				Arg3: []byte(CurrentCall(ctx).RoutingKey()),
+				Arg3: []byte(tchannel.CurrentCall(ctx).RoutingKey()),
 			}, nil
 		})
 
-		ctx, cancel := NewContextBuilder(time.Second).Build()
+		ctx, cancel := tchannel.NewContextBuilder(time.Second).Build()
 		defer cancel()
 		_, arg3, _, err := raw.Call(ctx, ch, peerInfo.HostPort, peerInfo.ServiceName, "test", nil, nil)
 		assert.NoError(t, err, "Call failed")
 		assert.Equal(t, "", string(arg3), "Expected no routing key header")
 
-		ctx, cancel = NewContextBuilder(time.Second).SetRoutingKey("canary").Build()
+		ctx, cancel = tchannel.NewContextBuilder(time.Second).SetRoutingKey("canary").Build()
 		defer cancel()
 		_, arg3, _, err = raw.Call(ctx, ch, peerInfo.HostPort, peerInfo.ServiceName, "test", nil, nil)
 		assert.NoError(t, err, "Call failed")
@@ -100,21 +100,21 @@ func TestRoutingKeyPropagates(t *testing.T) {
 }
 
 func TestShardKeyPropagates(t *testing.T) {
-	WithVerifiedServer(t, nil, func(ch *Channel, hostPort string) {
+	WithVerifiedServer(t, nil, func(ch *tchannel.Channel, hostPort string) {
 		peerInfo := ch.PeerInfo()
 		testutils.RegisterFunc(ch, "test", func(ctx context.Context, args *raw.Args) (*raw.Res, error) {
 			return &raw.Res{
-				Arg3: []byte(CurrentCall(ctx).ShardKey()),
+				Arg3: []byte(tchannel.CurrentCall(ctx).ShardKey()),
 			}, nil
 		})
 
-		ctx, cancel := NewContextBuilder(time.Second).Build()
+		ctx, cancel := tchannel.NewContextBuilder(time.Second).Build()
 		defer cancel()
 		_, arg3, _, err := raw.Call(ctx, ch, peerInfo.HostPort, peerInfo.ServiceName, "test", nil, nil)
 		assert.NoError(t, err, "Call failed")
 		assert.Equal(t, arg3, []byte(""))
 
-		ctx, cancel = NewContextBuilder(time.Second).
+		ctx, cancel = tchannel.NewContextBuilder(time.Second).
 			SetShardKey("shard").Build()
 		defer cancel()
 		_, arg3, _, err = raw.Call(ctx, ch, peerInfo.HostPort, peerInfo.ServiceName, "test", nil, nil)
@@ -124,17 +124,17 @@ func TestShardKeyPropagates(t *testing.T) {
 }
 
 func TestCurrentCallWithNilResult(t *testing.T) {
-	ctx, cancel := NewContext(time.Second)
+	ctx, cancel := tchannel.NewContext(time.Second)
 	defer cancel()
-	call := CurrentCall(ctx)
+	call := tchannel.CurrentCall(ctx)
 	assert.Nil(t, call, "Should return nil.")
 }
 
-func getParentContext(t *testing.T) ContextWithHeaders {
+func getParentContext(t *testing.T) tchannel.ContextWithHeaders {
 	ctx := context.WithValue(context.Background(), "some key", "some value")
 	assert.Equal(t, "some value", ctx.Value("some key"))
 
-	ctx1, _ := NewContextBuilder(time.Second).
+	ctx1, _ := tchannel.NewContextBuilder(time.Second).
 		SetParentContext(ctx).
 		AddHeader("header key", "header value").
 		Build()
@@ -153,7 +153,7 @@ func TestContextBuilderParentContextMergeHeaders(t *testing.T) {
 	ctx.Headers()["fixed header"] = "fixed value"
 
 	// append header to parent
-	ctx2, _ := NewContextBuilder(time.Second).
+	ctx2, _ := tchannel.NewContextBuilder(time.Second).
 		SetParentContext(ctx).
 		AddHeader("header key 2", "header value 2").
 		Build()
@@ -164,7 +164,7 @@ func TestContextBuilderParentContextMergeHeaders(t *testing.T) {
 	}, ctx2.Headers())
 
 	// override parent header
-	ctx3, _ := NewContextBuilder(time.Second).
+	ctx3, _ := tchannel.NewContextBuilder(time.Second).
 		SetParentContext(ctx).
 		AddHeader("header key", "header value 2"). // override
 		Build()
@@ -186,7 +186,7 @@ func TestContextBuilderParentContextReplaceHeaders(t *testing.T) {
 	}, ctx.Headers())
 
 	// replace headers with a new map
-	ctx2, _ := NewContextBuilder(time.Second).
+	ctx2, _ := tchannel.NewContextBuilder(time.Second).
 		SetParentContext(ctx).
 		SetHeaders(map[string]string{"header key": "header value 2"}).
 		Build()
@@ -199,7 +199,7 @@ func TestContextWrapWithHeaders(t *testing.T) {
 	headers1 := map[string]string{
 		"k1": "v1",
 	}
-	ctx, _ := NewContextBuilder(time.Second).
+	ctx, _ := tchannel.NewContextBuilder(time.Second).
 		SetHeaders(headers1).
 		Build()
 	assert.Equal(t, headers1, ctx.Headers(), "Headers mismatch after Build")
@@ -207,7 +207,7 @@ func TestContextWrapWithHeaders(t *testing.T) {
 	headers2 := map[string]string{
 		"k1": "v1",
 	}
-	ctx2 := WrapWithHeaders(ctx, headers2)
+	ctx2 := tchannel.WrapWithHeaders(ctx, headers2)
 	assert.Equal(t, headers2, ctx2.Headers(), "Headers mismatch after WrapWithHeaders")
 }
 
@@ -220,7 +220,7 @@ func TestContextBuilderParentContextSpan(t *testing.T) {
 	ctx := getParentContext(t)
 	assert.Equal(t, "some value", ctx.Value("some key"))
 
-	ctx2, _ := NewContextBuilder(time.Second).
+	ctx2, _ := tchannel.NewContextBuilder(time.Second).
 		SetParentContext(ctx).
 		Build()
 	assert.Equal(t, "some value", ctx2.Value("some key"), "key/value propagated from parent ctx")
@@ -231,14 +231,14 @@ func TestContextBuilderParentContextSpan(t *testing.T) {
 func TestContextWrapChild(t *testing.T) {
 	tests := []struct {
 		msg         string
-		ctxFn       func() ContextWithHeaders
+		ctxFn       func() tchannel.ContextWithHeaders
 		wantHeaders map[string]string
 		wantValue   interface{}
 	}{
 		{
 			msg: "Basic context",
-			ctxFn: func() ContextWithHeaders {
-				ctxNoHeaders, _ := NewContextBuilder(time.Second).Build()
+			ctxFn: func() tchannel.ContextWithHeaders {
+				ctxNoHeaders, _ := tchannel.NewContextBuilder(time.Second).Build()
 				return ctxNoHeaders
 			},
 			wantHeaders: nil,
@@ -246,18 +246,18 @@ func TestContextWrapChild(t *testing.T) {
 		},
 		{
 			msg: "Wrap basic context with value",
-			ctxFn: func() ContextWithHeaders {
-				ctxNoHeaders, _ := NewContextBuilder(time.Second).Build()
-				return Wrap(context.WithValue(ctxNoHeaders, "1", "2"))
+			ctxFn: func() tchannel.ContextWithHeaders {
+				ctxNoHeaders, _ := tchannel.NewContextBuilder(time.Second).Build()
+				return tchannel.Wrap(context.WithValue(ctxNoHeaders, "1", "2"))
 			},
 			wantHeaders: nil,
 			wantValue:   "2",
 		},
 		{
 			msg: "Wrap context with headers and value",
-			ctxFn: func() ContextWithHeaders {
-				ctxWithHeaders, _ := NewContextBuilder(time.Second).AddHeader("h1", "v1").Build()
-				return Wrap(context.WithValue(ctxWithHeaders, "1", "2"))
+			ctxFn: func() tchannel.ContextWithHeaders {
+				ctxWithHeaders, _ := tchannel.NewContextBuilder(time.Second).AddHeader("h1", "v1").Build()
+				return tchannel.Wrap(context.WithValue(ctxWithHeaders, "1", "2"))
 			},
 			wantHeaders: map[string]string{"h1": "v1"},
 			wantValue:   "2",
@@ -293,7 +293,7 @@ func TestContextInheritParentTimeout(t *testing.T) {
 	pctx, cancel := context.WithTimeout(context.Background(), time.Hour)
 	defer cancel()
 
-	ctxBuilder := &ContextBuilder{
+	ctxBuilder := &tchannel.ContextBuilder{
 		ParentContext: pctx,
 	}
 	ctx, cancel := ctxBuilder.Build()
