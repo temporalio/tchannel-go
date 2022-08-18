@@ -33,7 +33,7 @@ setup:
 	mkdir -p $(BUILD)/examples
 	mkdir -p $(THRIFT_GEN_RELEASE_LINUX)
 	mkdir -p $(THRIFT_GEN_RELEASE_DARWIN)
-	touch $(BUILD)/go.mod
+	(cd $(BUILD) && go mod init "github.com/temporalio/tchannel-go")
 
 install_ci: $(BIN)/thrift install
 ifdef CROSSDOCK
