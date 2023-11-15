@@ -117,6 +117,11 @@ func Register(registrar tchannel.Registrar, funcs Handlers, onError func(context
 			return tchannel.TracerFromRegistrar(registrar)
 		}
 		handlers[m] = h
+	}
+
+	// Call Register after handlers map was filled to avoid possible data races,
+	// see [https://github.com/temporalio/temporal/issues/4000].
+	for m := range handlers {
 		registrar.Register(handler, m)
 	}
 
