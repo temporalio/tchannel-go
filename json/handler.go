@@ -117,6 +117,12 @@ func Register(registrar tchannel.Registrar, funcs Handlers, onError func(context
 			return tchannel.TracerFromRegistrar(registrar)
 		}
 		handlers[m] = h
+	}
+
+	// We have to register the methods after we've placed all handlers in the map to avoid a data race where one of the
+	// handlers is called, which would cause us to read from the map, potentially while it's still being written to by
+	// the for loop above.
+	for m := range funcs {
 		registrar.Register(handler, m)
 	}
 
