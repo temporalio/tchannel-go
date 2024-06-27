@@ -16,8 +16,8 @@ require (
 	github.com/uber/jaeger-client-go v2.22.1+incompatible
 	go.uber.org/atomic v1.7.0
 	go.uber.org/multierr v1.7.0
-	golang.org/x/net v0.7.0
-	golang.org/x/sys v0.5.0
+	golang.org/x/net v0.17.0
+	golang.org/x/sys v0.13.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 
