@@ -7,6 +7,10 @@ on:
   pull_request:
     branches: ['*']
 
+permissions:
+  contents: read
+  actions: write
+
 jobs:
   test:
     runs-on: ubuntu-latest
