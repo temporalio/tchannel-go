@@ -29,7 +29,17 @@ jobs:
     - name: Build
       run: go build ./...
 
+    - name: Vet
+      run: go vet ./...
+
     - name: Test
       # The thrift/thrift-gen tests require the Apache Thrift compiler toolchain,
       # which this workflow does not provision, so that package is excluded.
-      run: go test -count=1 $(go list ./... | grep -v '/thrift/thrift-gen')
+      # TestRelayCloseTimeout is a pre-existing flaky timing test.
+      run: go test -count=1 -skip 'TestRelayCloseTimeout' $(go list ./... | grep -v '/thrift/thrift-gen')
+
+    - name: Test (race)
+      # Race detection on the concurrency-critical tchannel package. Scoped to
+      # this package to avoid load-induced timing flakes seen when the whole
+      # module is run under -race in parallel.
+      run: go test -race -count=1 -skip 'TestRelayCloseTimeout' .

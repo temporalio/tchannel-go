@@ -280,9 +280,7 @@ func (r *Relayer) Relay(f *Frame) (shouldRelease bool, _ error) {
 
 	cr, err := newLazyCallReq(f)
 	if err != nil {
-		// The frame is malformed and will not be forwarded, so release it back to
-		// the pool rather than leaking a full-size pooled frame per bad frame
-		// (a repeatable allocation/GC DoS on a still-open connection).
+		// Malformed frame that won't be forwarded; release it back to the pool.
 		return _relayShouldRelease, err
 	}
 
