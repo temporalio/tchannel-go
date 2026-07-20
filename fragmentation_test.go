@@ -304,6 +304,46 @@ func TestFragmentationChecksumMismatch(t *testing.T) {
 	assert.Equal(t, errMismatchedChecksums, err)
 }
 
+func TestFragmentationEmptyFragmentReturnsError(t *testing.T) {
+	recvCh := make(fragmentChannel, 10)
+	r := newFragmentingReader(NullLogger, recvCh)
+
+	// Malformed fragment: flags=0 and a None checksum type (0-byte checksum),
+	// carrying no chunk data at all. The chunk-splitting loop appends nothing,
+	// so the reader must not index an empty chunk list.
+	recvCh <- []byte{0x00, byte(ChecksumTypeNone)}
+
+	var err error
+	require.NotPanics(t, func() {
+		reader, e := r.ArgReader(true /* last */)
+		err = e
+		if e == nil {
+			var arg []byte
+			err = NewArgReader(reader, nil).Read(&arg)
+		}
+	})
+	require.Equal(t, errEmptyFragment, err, "a fragment with no chunks must be rejected with errEmptyFragment")
+}
+
+func TestParseInboundFragmentRejectsInvalidChecksumType(t *testing.T) {
+	// Control: a valid (None) checksum type parses without error.
+	valid := NewFrame(MaxFramePayloadSize)
+	valid.Payload[0] = 0 // flags
+	valid.Payload[1] = byte(ChecksumTypeNone)
+	valid.Header.SetPayloadSize(2)
+	_, err := parseInboundFragment(nil, valid, &callResContinue{})
+	require.NoError(t, err)
+
+	// A checksum type byte out of range must be rejected here, not carried
+	// downstream where ChecksumType.New() would index checksumPools OOB.
+	bad := NewFrame(MaxFramePayloadSize)
+	bad.Payload[0] = 0 // flags
+	bad.Payload[1] = 0xFF
+	bad.Header.SetPayloadSize(2)
+	_, err = parseInboundFragment(nil, bad, &callResContinue{})
+	require.Error(t, err)
+}
+
 func runFragmentationErrorTest(f func(w *fragmentingWriter, r *fragmentingReader)) {
 	ch := make(fragmentChannel, 10)
 	w := newFragmentingWriter(NullLogger, ch, ChecksumTypeCrc32.New())

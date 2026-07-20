@@ -32,6 +32,7 @@ var (
 	errMismatchedChecksumTypes  = errors.New("peer returned different checksum types between fragments")
 	errMismatchedChecksums      = errors.New("different checksums between peer and local")
 	errChunkExceedsFragmentSize = errors.New("peer chunk size exceeds remaining data in fragment")
+	errEmptyFragment            = errors.New("peer fragment contained no chunks")
 	errAlreadyReadingArgument   = errors.New("already reading argument")
 	errNotReadingArgument       = errors.New("not reading argument")
 	errMoreDataInArgument       = errors.New("closed argument reader when there is more data available to read")
@@ -304,6 +305,10 @@ func (r *fragmentingReader) recvAndParseNextFragment(initial bool) error {
 	}
 
 	// Pull out the first chunk to act as the current chunk
+	if len(r.remainingChunks) == 0 {
+		r.err = errEmptyFragment
+		return r.err
+	}
 	r.curChunk, r.remainingChunks = r.remainingChunks[0], r.remainingChunks[1:]
 	return nil
 }
