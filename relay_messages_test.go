@@ -367,6 +367,42 @@ func TestLazyCallReqRejectsOtherFrames(t *testing.T) {
 	)
 }
 
+func TestLazyCallReqRejectsInvalidChecksumType(t *testing.T) {
+	frame := testCallReq(0).frameWithParams(t, testCallReqParams{})
+	lcr, err := newLazyCallReq(frame)
+	require.NoError(t, err, "control frame with a valid checksum type must parse")
+
+	// Corrupt the checksum-type byte to an out-of-range value. The relay parser
+	// must reject it, consistent with the direct inbound path, rather than
+	// silently relaying a frame whose checksum type is coerced to None.
+	frame.Payload[lcr.checksumTypeOffset] = 0xFF
+	_, err = newLazyCallReq(frame)
+	require.Equal(t, errInvalidChecksumType, err)
+}
+
+func TestLazyCallResRejectsInvalidChecksumType(t *testing.T) {
+	valid := newCallResFrame(t, testCallResParams{csumType: byte(ChecksumTypeNone)})
+	_, err := newLazyCallRes(valid)
+	require.NoError(t, err, "control frame with a valid checksum type must parse")
+
+	bad := newCallResFrame(t, testCallResParams{csumType: 0xFF})
+	_, err = newLazyCallRes(bad)
+	require.Equal(t, errInvalidChecksumType, err, "relay res parser must reject an invalid checksum type")
+}
+
+func TestRelayReleasesMalformedCallReqFrame(t *testing.T) {
+	frame := testCallReq(0).frameWithParams(t, testCallReqParams{})
+	lcr, err := newLazyCallReq(frame)
+	require.NoError(t, err)
+
+	// Corrupt the checksum type so newLazyCallReq fails inside Relay.
+	frame.Payload[lcr.checksumTypeOffset] = 0xFF
+
+	shouldRelease, err := (&Relayer{}).Relay(frame)
+	require.Error(t, err)
+	require.True(t, shouldRelease, "a malformed call-req frame must be released back to the pool, not leaked")
+}
+
 func TestLazyCallReqService(t *testing.T) {
 	withLazyCallReqCombinations(func(crt testCallReq) {
 		cr := crt.req(t)

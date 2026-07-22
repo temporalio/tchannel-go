@@ -21,12 +21,15 @@
 package tchannel
 
 import (
+	"errors"
 	"hash"
 	"hash/crc32"
 	"sync"
 )
 
 var checksumPools [checksumCount]sync.Pool
+
+var errInvalidChecksumType = errors.New("peer sent an unknown checksum type")
 
 // A ChecksumType is a checksum algorithm supported by TChannel for checksumming call bodies
 type ChecksumType byte
@@ -66,6 +69,13 @@ func init() {
 	}
 }
 
+// valid reports whether t is a checksum type known to this implementation.
+// A checksum type is read as a single byte off the wire, so any value is
+// syntactically possible; only these are safe to use as a checksumPools index.
+func (t ChecksumType) valid() bool {
+	return t < checksumCount
+}
+
 // ChecksumSize returns the size in bytes of the checksum calculation
 func (t ChecksumType) ChecksumSize() int {
 	switch t {
@@ -82,6 +92,9 @@ func (t ChecksumType) ChecksumSize() int {
 
 // pool returns the sync.Pool used to pool checksums for this type.
 func (t ChecksumType) pool() *sync.Pool {
+	if !t.valid() {
+		t = ChecksumTypeNone
+	}
 	return &checksumPools[int(t)]
 }
 
